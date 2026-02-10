@@ -11,9 +11,11 @@ import asyncio
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
-# if needed import Field to define characteristics like min length, max length, description etc
+# from google import genai
 
 app = FastAPI()
+
+# client = genai.Client(api_key='GEMINI_API_KEY')
 
 # HTTP methods fot RESTful API
 
@@ -195,7 +197,9 @@ Renewable ratio: {session['context']['renewable_ratio']}%
 Non-renewable ratio: {100 - session['context']['renewable_ratio']}%"""
     if state == "confirm":
         msg = message.lower()
-        if msg != "yes":
+        if msg != "yes" and msg != "no":
+            return ('confirm with "yes" or "no"')
+        elif msg == "no":
             session["state"] = "ask_power_sources"
             return (
             "Which power sources are you interested in?"
@@ -242,7 +246,15 @@ def handle_message(message, session_id):
 # 3. Setting your API key as an environment variable.
 # 4. Then, you can start experimenting with calling the Gemini API from your chatbot.py to generate responses or classify user intents.
 def ai_fallback(message, context):
-    return "I’m not fully sure, but here’s what I understand..."
+    response = client.models.generate_content(
+    model='gemini-2.5-flash',
+    contents={'text': 'Why is the sky blue?'},
+    config={
+        'temperature': 0,
+        'top_p': 0.95,
+        'top_k': 20,
+    },
+)
 
 # #region agent log
 DEBUG_LOG = "/Users/kiru/Documents/CS/digital_grid/.cursor/debug.log"
@@ -257,14 +269,14 @@ def _debug_log(msg: str, data: dict, hypothesis_id: str):
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    # #region agent log
-    _debug_log("chat request", {"session_id": req.session_id, "message": req.message}, "H1")
-    # #endregion
+    # # #region agent log
+    # _debug_log("chat request", {"session_id": req.session_id, "message": req.message}, "H1")
+    # # #endregion
     reply = handle_message(req.message, req.session_id)
-    # #region agent log
-    s = sessions.get(req.session_id, {})
-    _debug_log("after handle_message", {"session_id": req.session_id, "client_type": s.get("client_type"), "flow": s.get("flow"), "state": s.get("state"), "context_complete": s.get("context_complete"), "reply_preview": (reply[:60] + "..." if reply and len(reply) > 60 else reply)}, "H2")
-    # #endregion
+    # # #region agent log
+    # s = sessions.get(req.session_id, {})
+    # _debug_log("after handle_message", {"session_id": req.session_id, "client_type": s.get("client_type"), "flow": s.get("flow"), "state": s.get("state"), "context_complete": s.get("context_complete"), "reply_preview": (reply[:60] + "..." if reply and len(reply) > 60 else reply)}, "H2")
+    # # #endregion
     return ChatResponse(reply=reply)
 
 async def main():
@@ -275,4 +287,7 @@ async def main():
     await server.serve()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Shutting down...")
