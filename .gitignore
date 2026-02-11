@@ -1,4 +1,6 @@
 venv
+__pycache__
+.cursor/
 frontend.md
 notes.md
 python.md

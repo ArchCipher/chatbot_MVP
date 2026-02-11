@@ -8,14 +8,16 @@ FastAPI chatbot MVP
 
 import asyncio
 
+from mailbox import Message
+import os
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
-# from google import genai
+from google import genai
 
 app = FastAPI()
 
-# client = genai.Client(api_key='GEMINI_API_KEY')
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # HTTP methods fot RESTful API
 
@@ -24,8 +26,8 @@ def root():
     return {"message": "Hello World"}
 
 class ChatRequest(BaseModel):
-    message: str
     session_id: int
+    message: str
 
 class ChatResponse(BaseModel):
     reply: str
@@ -209,10 +211,11 @@ Non-renewable ratio: {100 - session['context']['renewable_ratio']}%"""
             return "Product configurations saved!" 
     return None
 
+# stub for MVP
 def handle_operational(session, message):
     return "You need to login for further inquiry."
 
-def handle_message(message, session_id):
+def handle_message(session_id, message):
     session = sessions.setdefault(session_id, {
         "client_type": None,
         "flow": None,
@@ -237,46 +240,26 @@ def handle_message(message, session_id):
     if session["flow"] == "product_config":
         return handle_product_config(session, message)
     return handle_operational(session, message)
-# maybe remove operational altogether fo MVP?
 
-# stub for ai fallback
+# gemini api fallback, but api call per message is expensive
+# could be used later for flow and intent classification
 # https://github.com/googleapis/python-genai
-# 1. Obtaining an API key from Google AI Studio.
-# 2. Installing the google-genai Python library (pip install google-genai).
-# 3. Setting your API key as an environment variable.
-# 4. Then, you can start experimenting with calling the Gemini API from your chatbot.py to generate responses or classify user intents.
 def ai_fallback(message, context):
     response = client.models.generate_content(
     model='gemini-2.5-flash',
-    contents={'text': 'Why is the sky blue?'},
+    contents={'text': message},
     config={
-        'temperature': 0,
-        'top_p': 0.95,
-        'top_k': 20,
+        'temperature': 0, # how random the response is
+        'top_p': 0.95, # probability of selecting the next token
+        'top_k': 20, # number of tokens to consider for the next token
     },
 )
-
-# #region agent log
-DEBUG_LOG = "/Users/kiru/Documents/CS/digital_grid/.cursor/debug.log"
-def _debug_log(msg: str, data: dict, hypothesis_id: str):
-    import json
-    try:
-        with open(DEBUG_LOG, "a") as f:
-            f.write(json.dumps({"location": "chatbot.py:chat", "message": msg, "data": data, "hypothesisId": hypothesis_id, "timestamp": __import__("time").time() * 1000}) + "\n")
-    except Exception:
-        pass
-# #endregion
+    return response.text
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    # # #region agent log
-    # _debug_log("chat request", {"session_id": req.session_id, "message": req.message}, "H1")
-    # # #endregion
-    reply = handle_message(req.message, req.session_id)
-    # # #region agent log
-    # s = sessions.get(req.session_id, {})
-    # _debug_log("after handle_message", {"session_id": req.session_id, "client_type": s.get("client_type"), "flow": s.get("flow"), "state": s.get("state"), "context_complete": s.get("context_complete"), "reply_preview": (reply[:60] + "..." if reply and len(reply) > 60 else reply)}, "H2")
-    # # #endregion
+    reply = handle_message(req.session_id, req.message)
+    # reply = ai_fallback(req.message, req.session_id)
     return ChatResponse(reply=reply)
 
 async def main():
@@ -290,4 +273,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Shutting down...")
+        pass
