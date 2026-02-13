@@ -5,21 +5,21 @@ MVP chatbot which handles consultation and product config details for clients in
 
 ## Requirements
 
-- Python 3.x
-- fastapi
-- uvicorn
-- pydantic
+Check requirements.txt
 
 ## Environment
-Make sure you create a virtual environment, activate it, and then [install FastAPI](https://fastapi.tiangolo.com/tutorial/#run-the-code):
+Make sure you create a virtual environment, activate it, and then install all dependencies mentioned in requirements.txt
 ```sh
-python -m venv path/to/venv/    # create venv
+python -m venv .venv    # create venv
 source .venv/bin/activate   # activate venv
 
-pip install "fastapi[standard]" # install fastapi
+pip install -r requirements.txt # install dependencies
 ```
 
-installing fastapi should also install uvicorn automatically.
+Environment vars:
+
+Create `.env` file with variables mentioned in `.env.example`
+
 
 ## Run
 As uvicorn runs async with the current code:
