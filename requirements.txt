@@ -2,6 +2,7 @@
 fastapi
 uvicorn
 pydantic
+dotenv
 google-genai
 chromadb
-dotenv
+langchain-text-splitters

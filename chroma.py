@@ -1,18 +1,23 @@
+'''
+ChromaDB client
+'''
+
 import chromadb
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+import os
 
 # in memory client:
 chroma_client = chromadb.Client()
 
-# for persistent storage, use:
+# for persistent data storage across restarts, use:
 # chroma_client = chromadb.PersistentClient(path="./chroma_db")
 
 collection = chroma_client.get_or_create_collection("all-my-documents")
 
 def add_docs_to_chroma(files):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
+        chunk_size=int(os.getenv("CHUNK_SIZE", 500)),
+        chunk_overlap=int(os.getenv("CHUNK_OVERLAP", 50))
     )
     for file in files:
         try:

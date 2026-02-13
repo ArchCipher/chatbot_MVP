@@ -1,14 +1,16 @@
 # Chatbot MVP
 
 ## Overview
-MVP chatbot which handles consultation and product config details for clients in python using fastapi and uvicorn server.
+MVP chatbot with RAG (Retrieval-Augmented Generation) capabilities that handles client requests using FastAPI and Uvicorn server.
 
 ## Requirements
 
-Check requirements.txt
+- Python: Version 3.10 - 3.12
+- Dependencies: Check [requirements.txt](./requirements.txt)
 
-## Environment
-Make sure you create a virtual environment, activate it, and then install all dependencies mentioned in requirements.txt
+## Installation
+Make sure you create a virtual environment, activate it, and then install all dependencies mentioned in `requirements.txt`
+
 ```sh
 python -m venv .venv    # create venv
 source .venv/bin/activate   # activate venv
@@ -16,10 +18,9 @@ source .venv/bin/activate   # activate venv
 pip install -r requirements.txt # install dependencies
 ```
 
-Environment vars:
+## Configuration:
 
-Create `.env` file with variables mentioned in `.env.example`
-
+Create `.env` file with variables mentioned in [.env.example](./.env.example)
 
 ## Run
 As uvicorn runs async with the current code:
@@ -32,34 +33,32 @@ or
 
 ## Architecture
 
-### Conversation Flows
-The chatbot uses a state machine with 3 main flows:
-1. Consultation
-- Collects user information: topic, name, email, phone, company details
-- Available to both buyers and sellers
-- After completion, buyers automatically proceed to product configuration
-2. Product Configuration
-- Collects power source preferences (solar, wind, hydro, thermal)
-- Fixed/market price ratio (must sum to 100%)
-- Renewable energy ratio (0-100%)
-- Only available to buyers
-3. Operational
-- Stub implementation for MVP
-- Intended for operational inquiries (history, matching, etc.)
+RAG (Retrieval-Augmented Generation)
 
-### State Management
-- Client Type Detection: Determines if user is buyer or seller based on keywords
-- Flow Detection: Routes to appropriate flow based on keywords and client type
-- State Tracking: Each flow maintains its own state (e.g., "ask_email", "ask_power_sources")
-- Context Storage: Collected data stored in session context dictionary
-- Validation: Email format, phone number format, percentage ranges validated
+**Indexing Phase (One-time setup):**
+Documents -> Chunks -> Embeddings + Indexing (VectorDB: ChromaDB)
+
+**Query Phase (Per request):**
+User Query -> Embed Query -> Search Vector DB -> Retrieve top X Chunks -> Build prompt (retrieved chunks + user query) -> LLM -> Response
+
+**Components:**
+- **Chunking**: [langchain_text_splitters.RecursiveCharacterTextSplitter](https://docs.langchain.com/oss/python/integrations/splitters) (configurable via CHUNK_SIZE, CHUNK_OVERLAP)
+- **Vector Database**: [chromadb](https://github.com/chroma-core/chroma) (embedding and indexing)
+- **LLM**: [google-genai](https://github.com/googleapis/python-genai) (Gemini 2.5 Flash)
+
+**Note:** 
+
+Indexing can be done via the /index_docs API endpoint or on server startup. Re-indexing is necessary when adding more documents to the context.
+
+ChromaDB automatically handles tokenization, embedding, and indexing when documents are added via `collection.add()`.
 
 ## Future improvement:
-- Handle operational inquiry
-- AI fallback
-- Table-driven flow
-- Intent classifier instead of detect_flow
-- Google's libphonenumber validation
+- **Persistence**: Use persistent data storage across restarts instead of in-memory storage:
+  `chroma_client = chromadb.PersistentClient(path="./chroma_db")`
+- **Folder support**: Enhance `add_docs_to_chroma` to accept folder paths in addition to file lists
+- **Production vector DB**: Consider Qdrant, or other vector DBs for production deployment
+- **Metadata filtering**: Use ChromaDB's `where` clause to filter by source, date, or other metadata
+- **Better error handling**: Add logging and retry logic for API calls
 
 ## API Documentation
 
@@ -85,7 +84,7 @@ Send a message to the chatbot.
 **Request:**
 ```json
 {
-  "message": "I want to buy electricity",
+  "message": "I want to consult",
   "session_id": 1
 }
 ```
@@ -97,41 +96,74 @@ Send a message to the chatbot.
 }
 ```
 
-**Request schema:** `message` (string) – user's message; `session_id` (integer) – session identifier for conversation tracking.
+**Request schema:**
+  `message` (string) – user's message.
+  `session_id` (integer) – session identifier for conversation tracking.
 
-**Response schema:** `reply` (string) – bot's response message.
+**Response schema:**
+  `reply` (string) – bot's response message generated using RAG.
+
+### POST /index_docs
+
+Index docs without restarting the server
+
+**Request:**
+```json
+{
+  "files": ["docs/example.md"]
+}
+```
+
+**Response:**
+```json
+{
+  "message": "",
+  "files_indexed": ["docs/example.md", "docs/notes.md"],
+  "errors": []
+}
+```
+
+**Request schema:**
+  `files` (array of strings) – list of file paths to index.
+
+**Response schema:**
+  `message` (string) – status message.
+  `files_indexed` (array of strings) – successfully indexed files.
+  `errors` (array of strings) – any errors encountered.
 
 ## Testing
 
 1. Start the server using `python chatbot.py`
+
 2. In another terminal, test the health endpoint:
 ```bash
 ./curl_scripts/test_health.sh
 ```
-3. Test a conversation:
+
+3. Index documents:
+```bash
+./curl_scripts/index_files.sh
+```
+
+4. Test a conversation:
+```bash
+./curl_scripts/test_chatbot.sh
+```
+or manually:
 ```bash
 curl -X POST http://127.0.0.1:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "I want to buy", "session_id": 1}'
+  -d '{"message": "What is your name?", "session_id": 1}'
 ```
 
-Scripts in `curl_scripts/`:
-- **test_health.sh** – Test GET / endpoint
-- **test_buyer_consultation.sh** – Complete buyer consultation flow (session_id=1)
-- **test_seller_consultation.sh** – Complete seller consultation flow (session_id=2)
-- **test_product_config.sh** – Full buyer + consultation + product configuration flow (session_id=1)
-- **test_invalid_inputs.sh** – Validation (invalid email, phone, percentages) (session_id=3)
-- **test_session_management.sh** – Session persistence across messages
+modify and run [test_chatbot.sh](./curl_scripts/test_chatbot.sh)
 
-Session IDs: buyer flows use 1, seller uses 2, invalid_inputs uses 3. You can run tests in any order without restarting the server.
-
-Test complete user journeys:
-- Buyer: consultation → product_config
-- Seller: consultation only
-- Invalid inputs and error handling
-- Include both successful and error scenarios
 
 ## Files Reference
-- Main implementation: [chatbot.py](./chatbot.py)
-- Basic files: [README.md](./README.md), [requirements.txt](./requirements.txt)
-- Curl scripts: [curl_scripts/](./curl_scripts/) (test_health.sh, test_buyer_consultation.sh, test_seller_consultation.sh, test_product_config.sh, test_invalid_inputs.sh, test_session_management.sh)
+- Main implementation: [chatbot.py](./chatbot.py) – Fast API app and RAG logi
+- ChromaDB client implementation: [chroma.py](./chroma.py) – Vector database operations
+- Configuration: [requirements.txt](./requirements.txt), [.env.example](./.env.example)
+- Curl scripts: [curl_scripts/](./curl_scripts/)
+  - [test_health.sh](./curl_scripts/test_health.sh) – Test GET / endpoint
+  - [test_chatbot.sh](./curl_scripts/test_chatbot.sh) - Test POST /chat endpoint
+  - [index_files.sh](./curl_scripts/index_files.sh) - Index documents via POST /index_docs endpoint
