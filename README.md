@@ -20,15 +20,17 @@ pip install -r requirements.txt # install dependencies
 
 ## Configuration:
 
-Create `.env` file with variables mentioned in [.env.example](./.env.example)
+- Create `.env` file with variables mentioned in [.env.example](./.env.example)
 
-Use a folder named `source_docs` for your documents, or set the `COLLECTION_PATH` env variable to your folder path.
+- Use a folder named `source_docs` for your documents, or set the `COLLECTION_PATH` env variable to your folder path.
+
+- The vectordb uses persistent storage. The default path is `./chroma_db`, if needed, override it by setting `PERSISTENT_STORAGE` in `.env` (see [.env.example](./.env.example))
 
 ## Run
 To run programmatically:
 `python chatbot.py`
 
-To run via CLI (non-programmatically`):
+To run via CLI (non-programmatically):
 `fastapi dev chatbot.py`
 or
 `uvicorn chatbot:app --reload`
@@ -55,8 +57,6 @@ Indexing new documents can be done via the `/index_docs` API endpoint. Loading/r
 ChromaDB automatically handles tokenization, embedding, and indexing when documents are added via `collection.add()`.
 
 ## Future improvement:
-- **Persistence**: Use persistent data storage across restarts instead of in-memory storage (e.g. in `RagClient.__init__`):
-  `self.chroma_client = chromadb.PersistentClient(path="./chroma_db")`
 - **Production vector DB**: Consider Qdrant, or other vector DBs for production deployment
 - **Metadata filtering**: Use ChromaDB's `where` clause to filter by source, date, or other metadata
 https://docs.trychroma.com/docs/querying-collections/metadata-filtering

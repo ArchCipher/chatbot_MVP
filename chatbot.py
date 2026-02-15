@@ -11,21 +11,18 @@ FastAPI client for RAG chatbot
 '''
 
 import asyncio
-
-import uvicorn
-from fastapi import FastAPI, HTTPException
-
-from pydantic import BaseModel
+import os
 
 from dotenv import load_dotenv
-import os
+from fastapi import FastAPI, HTTPException
+from google import genai
+from pydantic import BaseModel
+import uvicorn
 
 load_dotenv()  # Load .env before importing chroma (which uses env vars)
 api_key=os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY is not set")
-
-from google import genai
 
 from chroma import RagClient
 
@@ -125,7 +122,9 @@ async def main():
     await server.serve()
 
 if __name__ == "__main__":
-    rag_client.add_docs_to_chroma(["docs/example.md"])
+    status = rag_client.reload_collection()
+    if status is not None:
+        raise HTTPException(status_code=404, detail=status)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

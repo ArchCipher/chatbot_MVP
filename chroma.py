@@ -2,17 +2,15 @@
 ChromaDB client
 '''
 
-import chromadb
-import os
 import hashlib
+import os
+
+import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 class RagClient:
     def __init__(self):
-        # in memory client:
-        self.chroma_client = chromadb.Client()
-        # for persistent data storage across restarts, use:
-        # self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
+        self.chroma_client = chromadb.PersistentClient(path=os.getenv("PERSISTENT_STORAGE", "./chroma_db"))
         self.collection = self.chroma_client.get_or_create_collection("my-collection")
 
     @staticmethod
