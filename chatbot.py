@@ -6,7 +6,6 @@ FastAPI client for RAG chatbot
 - Pydantic: data validation library for Python
 - dotenv/ os: load environment variables from .env file
 - google-genai: Google GenAI API client
-- chromadb: ChromaDB client
 - chroma.py: ChromaDB client implementation
 '''
 
@@ -32,13 +31,7 @@ genai_client = genai.Client(api_key=api_key)
 # instantiate RagClient
 rag_client = RagClient()
 
-# HTTP methods for RESTful API
-
-# API endpoint to health check
-@app.get("/")
-def root():
-    return {"message": "Hello World"}
-
+# Pydantic request and response models
 class ChatRequest(BaseModel):
     session_id: int
     message: str
@@ -54,36 +47,30 @@ class IndexDocsResponse(BaseModel):
     files_indexed: list[str] = []
     errors: list[str] = []
 
+# RAG retrieval without GenAI
+class ChatTestResponse(BaseModel):
+    chunks: list[dict]
+    total_chunks: int
+
+# Constants
 SYSTEM_PROMPT = """You are a helpful assistant. Use the provided context from
 the source documents to answer questions accurately. If the context doesn't
 contain relevant information, you can use your general knowledge but mention
 that the information isn't from the source documents. Be concise and helpful."""
 
-def generate_response(message, context):
-    # build prompt
-    if context:
-        prompt = f"""Please answer the question based on the context below when relevant:
-Context from source documents: {context}
-Question: {message}
-Answer: """
-    else:
-        prompt = message
-    try:
-        response = genai_client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents={'text': prompt},
-        config={
-            'system_instruction': SYSTEM_PROMPT,
-            'temperature': 0, # how random the response is
-            'top_p': 0.95, # probability of selecting the next token
-            'top_k': 20, # number of tokens to consider for the next token
-            },
-        )
-    # add HTTP exception handling instead of returning string
-    except Exception as e:
-        print(f"Error generating response: {e}")
-        return "Sorry, I couldn't process your request. Please try again later."
-    return response.text
+# API endpoint for health check
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+
+# API endpoint to test RAG retrieval without GenAI
+@app.post("/chat_test", response_model=ChatTestResponse)
+def chat_test(req: ChatRequest):
+    chunks = rag_client.get_query_results(req.message)
+    return ChatTestResponse(
+        chunks=chunks,
+        total_chunks=len(chunks)
+    )
 
 # API endpoint to chat with the bot
 @app.post("/chat", response_model=ChatResponse)
@@ -113,6 +100,31 @@ def reload_docs():
     if status is not None:
         raise HTTPException(status_code=404, detail=status)
     return {"message": "Documents reloaded successfully"}
+
+def generate_response(message, context):
+    # build prompt
+    if context:
+        prompt = f"""Please answer the question based on the context below when relevant:
+Context from source documents: {context}
+Question: {message}
+Answer: """
+    else:
+        prompt = message
+    try:
+        response = genai_client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents={'text': prompt},
+        config={
+            'system_instruction': SYSTEM_PROMPT,
+            'temperature': 0, # how random the response is
+            'top_p': 0.95, # probability of selecting the next token
+            'top_k': 20, # number of tokens to consider for the next token
+            },
+        )
+    except Exception as e:
+        print(f"Error generating response: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    return response.text
 
 async def main():
     '''Run Uvicorn programmatically'''

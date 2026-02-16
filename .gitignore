@@ -1,3 +1,4 @@
+.DS_Store
 .venv*
 __pycache__
 .cursor/
@@ -7,3 +8,5 @@ python.md
 .env
 source_docs
 chroma_db
+test.py
+test_results
