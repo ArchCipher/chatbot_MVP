@@ -17,8 +17,8 @@ Sanitized excerpt from retrieval pipeline for query `"What is PRE30-C?"` with `N
     "message": "Query summary",
     "data": {
         "query": "What is PRE30-C?",
-        "total_chunks_retrieved": 8,
-        "distances": [0.0, 1.28, 1.33, 1.33, 1.34, 1.34, 1.35, 1.35], "rules_found_in_chunks": ["PRE30-C"],
+        "total_chunks_retrieved": 5,
+        "distances": [0.0, 1.28, 1.33, 1.33, 1.34], "rules_found_in_chunks": ["PRE30-C"],
         "query_contains_rule": true
         }
 }

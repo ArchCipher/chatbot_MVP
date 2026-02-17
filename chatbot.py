@@ -49,8 +49,7 @@ class IndexDocsResponse(BaseModel):
 
 # RAG retrieval without GenAI
 class ChatTestResponse(BaseModel):
-    chunks: list[dict]
-    total_chunks: int
+    context: str
 
 # Constants
 SYSTEM_PROMPT = """You are a helpful assistant. Use the provided context from
@@ -66,11 +65,8 @@ def root():
 # API endpoint to test RAG retrieval without GenAI
 @app.post("/chat_test", response_model=ChatTestResponse)
 def chat_test(req: ChatRequest):
-    chunks = rag_client.get_query_results(req.message)
-    return ChatTestResponse(
-        chunks=chunks,
-        total_chunks=len(chunks)
-    )
+    context = rag_client.get_context(req.message)
+    return ChatTestResponse(context=context)
 
 # API endpoint to chat with the bot
 @app.post("/chat", response_model=ChatResponse)

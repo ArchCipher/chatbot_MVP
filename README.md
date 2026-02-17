@@ -97,8 +97,11 @@ Example `query_summary` (concise): `distances: [0.0, 1.28, 1.33, ...], rules_fou
 - **Metadata filtering**: Extend filtering (using ChromaDB's `where` clause to filter by source, date, or other metadata) in addition to current rule_id filter. See [Chroma Metadata Filtering](https://docs.trychroma.com/docs/querying-collections/metadata-filtering)
 - **Distance-based filtering**: Use the distance returned by get_query_results in get_context (e.g. only include chunks with distance below a threshold, or within a narrow range)
 - **Indexing / ingestion performance:** Speed up PDF to markdown conversion, chunking, and single-document add to the vector DB (with parallel processing, caching, or incremental indexing).
+- **Persistent file hashes**: Store file modification time hashes in JSON file instead of in-memory `RagClient.file_hashes` to survive server restarts and enable incremental indexing across restarts
 - **Better error handling:** Add logging and retry logic for API calls
 - **Production vector DB**: Consider Qdrant, or other vector DBs for production deployment
+- **Production deployment**: Remove endpoints (`/index_docs`, `/reload_docs`, `/chat_test`) from public API and replace with CLI scripts for server-side operations
+- **Document automation**: Automate document updates and indexing (e.g. watch for new PDF releases, download and index automatically, use date metadata to prioritize recent documents)
 
 ## API Documentation
 
