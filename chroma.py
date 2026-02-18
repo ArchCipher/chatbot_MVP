@@ -5,6 +5,7 @@ RAG client implementation using ChromaDB.
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import hashlib
+import json
 import os
 import re
 from pathlib import Path
@@ -15,12 +16,31 @@ import pymupdf.layout
 import pymupdf4llm
 
 class RagClient:
-    # optimisation: store file_hashes in json file
     def __init__(self):
         self.chroma_client = chromadb.PersistentClient(path=os.getenv("PERSISTENT_STORAGE", "./chroma_db"))
         self.collection = self.chroma_client.get_or_create_collection("my-collection")
-        self.file_hashes = {}
         self.chroma_lock = threading.Lock()
+        hash_folder = Path(os.getenv("PERSISTENT_STORAGE", "./chroma_db"))
+        hash_folder.mkdir(parents=True, exist_ok=True)
+        self.hash_file = hash_folder / Path(os.getenv("HASH_FILE", "./file_hashes.json"))
+        self.file_hashes = self._load_file_hashes()
+
+    def _load_file_hashes(self):
+        if self.hash_file.exists():
+            try:
+                with open(self.hash_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error loading file hashes: {e}")
+                return {}
+        return {}
+    
+    def _save_file_hashes(self):
+        try:
+            with open(self.hash_file, "w", encoding="utf-8") as f:
+                json.dump(self.file_hashes, f, indent=4)
+        except Exception as e:
+            print(f"Error saving file hashes: {e}")
 
     def reload_collection(self):
         path_str = os.getenv("COLLECTION_PATH", "source_docs")
@@ -95,14 +115,15 @@ class RagClient:
         errors = []
         files_to_process = []
         for file in files:
+            norm_file = str(Path(file).resolve())
             try:
-                file_stat = Path(file).stat()
+                file_stat = Path(norm_file).stat()
                 current_mtime = file_stat.st_mtime
-                if file in self.file_hashes and self.file_hashes[file] == current_mtime:
+                if norm_file in self.file_hashes and self.file_hashes[norm_file] == current_mtime:
                     continue
-                files_to_process.append(file)
+                files_to_process.append(norm_file)
             except Exception as e:
-                files_to_process.append(file)
+                files_to_process.append(norm_file)
         successful_files = []
         with ThreadPoolExecutor(max_workers=2) as executor:
             future_to_file = {
@@ -120,8 +141,9 @@ class RagClient:
         for file in successful_files:
             try:
                 self.file_hashes[file] = Path(file).stat().st_mtime
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error updating file hash for {file}: {e}")
+        self._save_file_hashes()
         return files_indexed, errors
 
     def _process_file(self, file, chunk_size, chunk_overlap):

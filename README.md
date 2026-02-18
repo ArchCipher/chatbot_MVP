@@ -31,7 +31,9 @@ pip install -r requirements.txt # install dependencies
 
 **Note:** The chatbot accepts any markdown/pdf documents you provide. PDFs are automatically converted to markdown during indexing. The `source_docs` folder is not included in this repository—you must add your own documents. 
 
-- The vectordb uses persistent storage. The default path is `./chroma_db`, if needed, override it by setting `PERSISTENT_STORAGE` in `.env` (see [.env.example](./.env.example))
+- The vectordb uses persistent storage (default `./chroma_db`). Override with `PERSISTENT_STORAGE` in `.env` (see [.env.example](./.env.example)).
+
+- File modification times are stored in a JSON file there (default `file_hashes.json`, override `HASH_FILE`) for incremental re-indexing. Format: [sample_file_hashes.json](docs/sample_file_hashes.json).
 
 ## Run
 To run programmatically:
@@ -70,7 +72,9 @@ flowchart LR
 ```
 
 **Components:**
-- **Chunking**: [langchain_text_splitters.RecursiveCharacterTextSplitter](https://docs.langchain.com/oss/python/integrations/splitters) (configurable via CHUNK_SIZE, CHUNK_OVERLAP)
+- **Chunking**: 
+  1. Header-based splitting: Regex-based splitting on chapter-level markdown headers (`## \*\*\d+ `) to preserve semantic boundaries
+  2. Recursive character splitting: [langchain_text_splitters.RecursiveCharacterTextSplitter](https://docs.langchain.com/oss/python/integrations/splitters) for further chunking if sections exceed chunk_size (configurable via `CHUNK_SIZE`, `CHUNK_OVERLAP`)
 - **Vector Database**: [chromadb](https://github.com/chroma-core/chroma) (embedding and indexing)
 - **LLM**: [google-genai](https://github.com/googleapis/python-genai) (Gemini 2.5 Flash)
 
@@ -93,15 +97,20 @@ For a rule-specific query, the retrieval pipeline prepends the matching rule chu
 Example `query_summary` (concise): `distances: [0.0, 1.28, 1.33, ...], rules_found_in_chunks: ["PRE30-C"]`. See [sample retrieval output](docs/sample_retrieval_output.md) for a short sanitized log excerpt. The sample uses [SEI CERT C and C++ Coding Standards](https://www.sei.cmu.edu/library/sei-cert-c-and-c-coding-standards/)(2016 editions)
 
 ## Future improvement:
-- **Source data:** Replace SEI CERT with open source data: OWASP, CWE, NIST, CISA
-- **Metadata filtering**: Extend filtering (using ChromaDB's `where` clause to filter by source, date, or other metadata) in addition to current rule_id filter. See [Chroma Metadata Filtering](https://docs.trychroma.com/docs/querying-collections/metadata-filtering)
+
+### Core Stability
 - **Distance-based filtering**: Use the distance returned by get_query_results in get_context (e.g. only include chunks with distance below a threshold, or within a narrow range)
-- **Indexing / ingestion performance:** Speed up PDF to markdown conversion, chunking, and single-document add to the vector DB (with parallel processing, caching, or incremental indexing).
-- **Persistent file hashes**: Store file modification time hashes in JSON file instead of in-memory `RagClient.file_hashes` to survive server restarts and enable incremental indexing across restarts
 - **Better error handling:** Add logging and retry logic for API calls
-- **Production vector DB**: Consider Qdrant, or other vector DBs for production deployment
-- **Production deployment**: Remove endpoints (`/index_docs`, `/reload_docs`, `/chat_test`) from public API and replace with CLI scripts for server-side operations
-- **Document automation**: Automate document updates and indexing (e.g. watch for new PDF releases, download and index automatically, use date metadata to prioritize recent documents)
+
+### Code Analysis (Core Value)
+- **Code input endpoint**: Add `/analyze_code` endpoint for semantic code → rule retrieval (no AST parsing needed)
+- **42 Integration**: Test against personal C projects and document security findings
+- **Security report generation**: CLI tool to scan code and output markdown security reports
+
+### Future (When Needed)
+- **Metadata filtering**: Extend filtering using ChromaDB's `where` clause for source, date, or other metadata
+- **Document automation**: Automate document updates and indexing (e.g., watch for new PDF releases)
+- **Production optimizations**: Vector DB migration, performance improvements (only when real users exist)
 
 ## API Documentation
 

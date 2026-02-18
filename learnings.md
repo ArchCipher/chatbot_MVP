@@ -51,9 +51,9 @@
 |--------------|------------|-----------|----------|---------|-------|
 | Sequential | ~706s | - | - | - | Processed .md twice (bug) |
 | 2 threads (add_docs only) | 670.98s | - | - | 1.05x | Processed .md twice (bug) |
-| Sequential | 301.14s | - | - | 2.3x | - |
-| 2 threads (add_docs only) | 302.4s | - | - | 2.3x | - |
-| 2 PDF + 2 add_docs threads | ~273.25s | 147.70s | 114.72s | 2.6x | ✅ After duplicate fix |
+| Sequential | 301.14s | - | - | 2.3x | After duplicate fix |
+| 2 threads (add_docs only) | 302.4s | - | - | 2.3x | After duplicate fix |
+| 2 PDF + 2 add_docs threads | ~273.25s | 147.70s | 114.72s | 2.6x | After duplicate fix |
 
 #### Sequential (Baseline)
 Total time: ~1413 seconds (1414.29, 1411.97)
