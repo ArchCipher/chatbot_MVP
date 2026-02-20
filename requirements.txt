@@ -8,3 +8,6 @@ pymupdf.layout
 pymupdf4llm
 pydantic
 uvicorn
+
+# github_downloader
+requests

@@ -11,6 +11,11 @@ FastAPI client for RAG chatbot
 
 import asyncio
 import os
+import logging
+
+logger = logging.getLogger("chatbot")
+
+# TODO: LoggingMiddleware for FastAPI and ChromaDB
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -18,18 +23,25 @@ from google import genai
 from pydantic import BaseModel
 import uvicorn
 
-load_dotenv()  # Load .env before importing chroma (which uses env vars)
+# Load environment variables
+load_dotenv()
+
 api_key=os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY is not set")
 
-from chroma import RagClient
-
 app = FastAPI()
 genai_client = genai.Client(api_key=api_key)
 
+from chroma import RagClient
+
 # instantiate RagClient
-rag_client = RagClient()
+rag_client = RagClient(
+        name=os.getenv("COLLECTION_NAME", "my-collection"),
+        persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
+        collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
+        hash_filename=os.getenv("HASH_FILE", "file_hashes.json")
+    )
 
 # Pydantic request and response models
 class ChatRequest(BaseModel):
@@ -38,18 +50,6 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-
-class IndexDocsRequest(BaseModel):
-    files: list[str]
-
-class IndexDocsResponse(BaseModel):
-    message: str
-    files_indexed: list[str] = []
-    errors: list[str] = []
-
-# RAG retrieval without GenAI
-class ChatTestResponse(BaseModel):
-    context: str
 
 # Constants
 SYSTEM_PROMPT = """You are a helpful assistant. Use the provided context from
@@ -62,40 +62,12 @@ that the information isn't from the source documents. Be concise and helpful."""
 def root():
     return {"message": "Hello World"}
 
-# API endpoint to test RAG retrieval without GenAI
-@app.post("/chat_test", response_model=ChatTestResponse)
-def chat_test(req: ChatRequest):
-    context = rag_client.get_context(req.message)
-    return ChatTestResponse(context=context)
-
 # API endpoint to chat with the bot
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     # Generate response with RAG context retrieval
     reply = generate_response(req.message, rag_client.get_context(req.message))
     return ChatResponse(reply=reply)
-
-# API endpoint to add/update documents without restarting server
-@app.post("/index_docs", response_model=IndexDocsResponse)
-def index_docs(req: IndexDocsRequest):
-    files_indexed, errors = rag_client.add_docs_to_chroma(req.files)
-    if not errors:
-        message = "Documents indexed successfully"
-    else:
-        message = f"Completed with {len(errors)} error(s)"
-    return IndexDocsResponse(
-        message=message,
-        files_indexed=files_indexed,
-        errors=errors
-    )
-
-@app.post("/reload_docs")
-def reload_docs():
-    load_dotenv(override=True)
-    status = rag_client.reload_collection()
-    if status is not None:
-        raise HTTPException(status_code=404, detail=status)
-    return {"message": "Documents reloaded successfully"}
 
 def generate_response(message, context):
     # build prompt
@@ -118,21 +90,31 @@ Answer: """
             },
         )
     except Exception as e:
-        print(f"Error generating response: {e}")
+        logger.error(f"Error generating response: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
     return response.text
 
 async def main():
-    '''Run Uvicorn programmatically'''
-    config = uvicorn.Config("chatbot:app", port=8000)
-    # use reload=True if not production?
+    # Configure logging
+    logging.basicConfig(
+        filename='chatbot.log',
+        level=logging.INFO,
+        format= '[%(asctime)s][%(levelname)s][%(name)s][%(message)s]'
+        )
+    # Reload documents
+    response = rag_client.reload_collection()
+    status = response["status"]
+    log = f"Documents reloaded: status: {status}, {len(response['files indexed'])} Files indexed: {response['files indexed']}, Errors: {response['errors']}"
+    if status == "error":
+        logger.error(log)
+        raise RuntimeError("Reload failed")
+    logger.info(log)
+    # Run Uvicorn programmatically
+    config = uvicorn.Config("chatbot:app", port=8000) # use reload=True if not production
     server = uvicorn.Server(config)
     await server.serve()
 
 if __name__ == "__main__":
-    status = rag_client.reload_collection()
-    if status is not None:
-        raise HTTPException(status_code=404, detail=status)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

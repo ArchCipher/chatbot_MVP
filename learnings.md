@@ -59,6 +59,10 @@
 Total time: ~1413 seconds (1414.29, 1411.97)
 Average time per file: ~706 seconds (707.14, 705.98)
 
+### Sequential (After duplicate fix)
+- Store file hashes to prevent chunking file again or check modification time
+- Normalise path to prevent duplicate entries
+
 #### Multi-threaded (2 PDF threads + 2 add_docs threads)
 
 - ~2.6 times faster than sequential
@@ -85,3 +89,5 @@ Average time per file: ~706 seconds (707.14, 705.98)
 - File processing: `ThreadPoolExecutor(max_workers=2)` in `add_docs_to_chroma()`
 - Thread safety: `threading.Lock()` protects ChromaDB operations in `_add_doc_to_chroma()`
 - Duplicate file fix: `md_files_from_pdfs` variable to track files from markdown files created from pdfs
+
+---

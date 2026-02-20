@@ -27,7 +27,7 @@ pip install -r requirements.txt # install dependencies
 
 - Create `.env` file with variables mentioned in [.env.example](./.env.example)
 
-- Use a folder named `source_docs` for your documents, or set the `COLLECTION_PATH` env variable to your folder path.
+- Use a folder named `source_docs` for your documents, or set the `COLLECTION_PATH` env variable to your folder path. To fetch docs from GitHub into source_docs, see [github_downloader/README.md](./github_downloader/README.md).
 
 **Note:** The chatbot accepts any markdown/pdf documents you provide. PDFs are automatically converted to markdown during indexing. The `source_docs` folder is not included in this repository—you must add your own documents. 
 
@@ -80,7 +80,7 @@ flowchart LR
 
 **Note:** 
 
-Indexing new documents can be done via the `/index_docs` API endpoint. Loading/reloading docs from the collection folder (default `source_docs`, overridable via `COLLECTION_PATH`) is necessary on server startup or when documents are updated.
+Docs are loaded from the collection folder at server startup (default `source_docs`, overridable via `COLLECTION_PATH`). Reload when you update docs.
 
 ChromaDB automatically handles tokenization, embedding, and indexing when documents are added via `collection.add()`.
 
@@ -155,38 +155,6 @@ Send a message to the chatbot.
 **Response schema:**
   `reply` (string) – bot's response message generated using RAG.
 
-### POST /reload_docs
-
-Load or re-load all docs from the collection folder (default `source_docs`, see `COLLECTION_PATH`) without restarting the server.
-
-### POST /index_docs
-
-Index docs without restarting the server
-
-**Request:**
-```json
-{
-  "files": ["docs/example.md"]
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Documents indexed successfully",
-  "files_indexed": ["docs/example.md", "docs/notes.md"],
-  "errors": []
-}
-```
-
-**Request schema:**
-  `files` (array of strings) – list of file paths to index.
-
-**Response schema:**
-  `message` (string) – status message.
-  `files_indexed` (array of strings) – successfully indexed files.
-  `errors` (array of strings) – any errors encountered.
-
 ## Testing
 
 1. Start the server using `python chatbot.py`
@@ -196,12 +164,7 @@ Index docs without restarting the server
 ./curl_scripts/test_health.sh
 ```
 
-3. Index documents:
-```bash
-./curl_scripts/index_files.sh
-```
-
-4. Test a conversation:
+3. Test a conversation:
 ```bash
 ./curl_scripts/test_chatbot.sh
 ```
@@ -219,12 +182,16 @@ curl -X POST http://127.0.0.1:8000/chat \
 ```
 
 ## Files Reference
-- Main implementation: [chatbot.py](./chatbot.py) – FastAPI app and RAG logic
-- ChromaDB client implementation: [chroma.py](./chroma.py) – Vector database operations
-- Configuration: [requirements.txt](./requirements.txt), [.env.example](./.env.example)
-- Curl scripts: [curl_scripts/](./curl_scripts/)
-  - [test_health.sh](./curl_scripts/test_health.sh) – Test GET / endpoint
-  - [test_chatbot.sh](./curl_scripts/test_chatbot.sh) - Test POST /chat endpoint
-  - [tests.sh](./curl_scripts/tests.sh) - Multiple tests POST /chat endpoint
-  - [reload_docs.sh](./curl_scripts/reload_docs.sh) - Load/reload documents via POST /reload_docs endpoint
-  - [index_files.sh](./curl_scripts/index_files.sh) - Index documents via POST /index_docs endpoint
+- Main implementation: [chatbot.py](chatbot.py) – FastAPI app and RAG logic
+- ChromaDB client implementation: [chroma.py](chroma.py) – Vector database operations
+- Configuration: [requirements.txt](requirements.txt), [.env.example](.env.example)
+- Packages
+  - TODO Chroma
+  - [github_downloader/](github_downloader/) - see [github_downloader/README.md](./github_downloader/README.md)
+- Scripts: [scripts/](scripts/)
+  - [remove_files.py](scripts/remove_files.py) - script to remove file from Chroma collection. Run using `python -m scripts.remove_files`
+  - [reload_db.py](scripts/reload_db.py) - script to reload Chroma collection. Run using `python -m scripts.reload_db`
+- Curl scripts: [curl_scripts/](curl_scripts/)
+  - [test_health.sh](curl_scripts/test_health.sh) – Test GET / endpoint
+  - [test_chatbot.sh](curl_scripts/test_chatbot.sh) - Test POST /chat endpoint
+  - [tests.sh](curl_scripts/tests.sh) - Multiple tests POST /chat endpoint

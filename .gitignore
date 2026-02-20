@@ -2,6 +2,7 @@
 .venv*
 __pycache__
 .cursor/
+*.log
 frontend.md
 notes.md
 python.md
