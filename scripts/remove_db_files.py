@@ -12,18 +12,19 @@ from chroma import RagClient
 
 # instantiate RagClient
 rag_client = RagClient(
-        name=os.getenv("COLLECTION_NAME", "my-collection"),
-        persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
-        collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
-        hash_filename=os.getenv("HASH_FILE", "file_hashes.json")
-    )
+    name=os.getenv("COLLECTION_NAME", "my-collection"),
+    persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
+    collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
+    hash_filename=os.getenv("HASH_FILE", "file_hashes.json"),
+)
+
 
 def main():
     logging.basicConfig(
-        filename='chatbot.log',
+        filename="chatbot.log",
         level=logging.INFO,
-        format= '[%(asctime)s][%(levelname)s][%(name)s][%(message)s]'
-        )
+        format="[%(asctime)s][%(levelname)s][%(name)s][%(message)s]",
+    )
     print("Enter file names (one per line):")
     print("If file is within COLLECTION_PATH/file_name, enter only the file_name.")
     print("If file is within COLLECTION_PATH/subdir/file_name, enter subdir/file_name.")
@@ -40,6 +41,7 @@ def main():
     # Remove file from collection
     files_removed = rag_client.indexer.remove_files(files=files)
     logger.info(f"Files removed: {files_removed}")
+
 
 if __name__ == "__main__":
     main()

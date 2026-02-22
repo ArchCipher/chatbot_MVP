@@ -1,4 +1,4 @@
-'''
+"""
 FastAPI client for RAG chatbot
 
 - FastAPI: Python web framework to build APIs
@@ -7,7 +7,7 @@ FastAPI client for RAG chatbot
 - dotenv/ os: load environment variables from .env file
 - google-genai: Google GenAI API client
 - chroma: ChromaDB/ RAG client implementation
-'''
+"""
 
 import asyncio
 import os
@@ -24,15 +24,20 @@ from chroma import RagClient
 # Logging
 logger = logging.getLogger("chatbot")
 
+
 # Pydantic request and response models
 class ChatRequest(BaseModel):
     """Incoming chat message and session identifier."""
+
     session_id: int
     message: str
 
+
 class ChatResponse(BaseModel):
     """LLM reply returned from /chat."""
+
     reply: str
+
 
 # Constants
 SYSTEM_PROMPT = """You are a helpful assistant. Use the provided context from
@@ -44,7 +49,7 @@ that the information isn't from the source documents. Be concise and helpful."""
 load_dotenv()
 
 # get Gemini API key
-api_key=os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY is not set")
 # instantiate LLM client: Gemini
@@ -52,25 +57,28 @@ genai_client = genai.Client(api_key=api_key)
 
 # instantiate RAG client: ChromaDB
 rag_client = RagClient(
-        name=os.getenv("COLLECTION_NAME", "my-collection"),
-        persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
-        collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
-        hash_filename=os.getenv("HASH_FILE", "file_hashes.json")
-    )
+    name=os.getenv("COLLECTION_NAME", "my-collection"),
+    persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
+    collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
+    hash_filename=os.getenv("HASH_FILE", "file_hashes.json"),
+)
 
 # instantiate FastAPI app
 app = FastAPI()
+
 
 @app.get("/")
 def root():
     """Health check."""
     return {"message": "Hello World"}
 
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     """Retrieve RAG context and generate reply."""
     reply = generate_response(req.message, rag_client.get_context(req.message))
     return ChatResponse(reply=reply)
+
 
 def generate_response(message, context):
     """Build prompt and call LLM client. Returns reply text or raise HTTPException."""
@@ -83,13 +91,13 @@ Answer: """
         prompt = message
     try:
         response = genai_client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents={'text': prompt},
-        config={
-            'system_instruction': SYSTEM_PROMPT,
-            'temperature': 0, # how random the response is
-            'top_p': 0.95, # probability of selecting the next token
-            'top_k': 20, # number of tokens to consider for the next token
+            model="gemini-2.5-flash",
+            contents={"text": prompt},
+            config={
+                "system_instruction": SYSTEM_PROMPT,
+                "temperature": 0,  # how random the response is
+                "top_p": 0.95,  # probability of selecting the next token
+                "top_k": 20,  # number of tokens to consider for the next token
             },
         )
     except Exception as e:
@@ -97,14 +105,15 @@ Answer: """
         raise HTTPException(status_code=500, detail="Internal server error")
     return response.text
 
+
 async def main():
     """Configure logging, reload Chroma collection, then run Uvicorn."""
     # Configure logging
     logging.basicConfig(
-        filename='chatbot.log',
+        filename="chatbot.log",
         level=logging.INFO,
-        format= '[%(asctime)s][%(levelname)s][%(name)s][%(message)s]'
-        )
+        format="[%(asctime)s][%(levelname)s][%(name)s][%(message)s]",
+    )
     # Reload documents
     response = rag_client.reload_collection()
     log = f"Collection reloaded: {len(response.files)} Files indexed: {response.files}, Errors: {response.errors}"
@@ -113,9 +122,12 @@ async def main():
         raise RuntimeError("Collection reload failed")
     logger.info(log)
     # Run Uvicorn programmatically
-    config = uvicorn.Config("chatbot:app", port=8000) # use reload=True if not production
+    config = uvicorn.Config(
+        "chatbot:app", port=8000
+    )  # use reload=True if not production
     server = uvicorn.Server(config)
     await server.serve()
+
 
 if __name__ == "__main__":
     try:

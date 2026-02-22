@@ -10,6 +10,7 @@ from chroma.models import CollectionResult
 
 logger = logging.getLogger("ChromaIndexer")
 
+
 class ChromaIndexer:
     """Indexes markdown files into a ChromaDB collection"""
 
@@ -26,7 +27,7 @@ class ChromaIndexer:
         errors = []
         with ThreadPoolExecutor(max_workers=2) as executor:
             future_to_file = {
-                executor.submit(self._process_file, file):file
+                executor.submit(self._process_file, file): file
                 for file in files_to_process
             }
             for future in as_completed(future_to_file):
@@ -45,7 +46,7 @@ class ChromaIndexer:
             self.hash_manager.save(self.hash_manager.file_hashes)
         return CollectionResult(files=files_indexed, errors=errors)
 
-    def remove_files(self, files)->list[str]:
+    def remove_files(self, files) -> list[str]:
         """Delete chunks for given source paths from collection and hash file"""
         files_removed = []
         file_hashes = self.hash_manager.file_hashes
@@ -106,9 +107,8 @@ class ChromaIndexer:
         # match rule_id: ## **(numbers).(numbers)(spaces)(rule_id).
         # rule_id: (3 or more uppercase letters)(digits)-C(optional PP)
         rule_id_match = re.search(
-                r'## \*\*\d+\.\d+\s+([A-Z]{3,}\d+-C(?:PP)?)\.',
-                chunk[:2000]
-            )
+            r"## \*\*\d+\.\d+\s+([A-Z]{3,}\d+-C(?:PP)?)\.", chunk[:2000]
+        )
         with self.lock:
             existing = self.collection.get(ids=[chunk_id], include=["metadatas"])
             # skip if chunk already exists, but ensure rule_id is set if chunk matches
@@ -116,21 +116,26 @@ class ChromaIndexer:
                 if not rule_id_match:
                     return
                 existing_meta = existing.get("metadatas")
-                if existing_meta and existing_meta[0].get("rule_id") != rule_id_match.group(1):
-                    new_meta = {**existing_meta[0],
+                if existing_meta and existing_meta[0].get(
+                    "rule_id"
+                ) != rule_id_match.group(1):
+                    new_meta = {
+                        **existing_meta[0],
                         "source": source,
                         "chunk_index": chunk_index,
-                        "rule_id": rule_id_match.group(1)
+                        "rule_id": rule_id_match.group(1),
                     }
-                    self.collection.update(documents=[chunk], metadatas=[new_meta], ids=[chunk_id])
+                    self.collection.update(
+                        documents=[chunk], metadatas=[new_meta], ids=[chunk_id]
+                    )
                 return
             meta = {"source": source, "chunk_index": chunk_index}
             if rule_id_match:
                 meta["rule_id"] = rule_id_match.group(1)
             self.collection.add(documents=[chunk], metadatas=[meta], ids=[chunk_id])
-    
+
     @staticmethod
     def _generate_md5_hash(text, source):
         """Generate chunk id from source path and content."""
         data = f"{source}:{text}"
-        return hashlib.md5(data.encode('utf-8')).hexdigest()
+        return hashlib.md5(data.encode("utf-8")).hexdigest()
