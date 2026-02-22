@@ -21,16 +21,18 @@ from chroma.models import CollectionResult
 
 logger = logging.getLogger("RagClient")
 
+
 class RagClient:
     """RAG client: indexing from collection_path and retrieval from ChromaDB."""
 
     MAX_RECURSION_DEPTH = 3
 
-    def __init__(self,
+    def __init__(
+        self,
         name: str = "my-collection",
         persistent_storage: str = "chroma_db",
         collection_path: str = "source_docs",
-        hash_filename: str = "file_hashes.json"
+        hash_filename: str = "file_hashes.json",
     ):
         """
         Create ChromaDB client, collection, indexer, and retriever.
@@ -55,7 +57,7 @@ class RagClient:
         results = self.retriever.get_query_results(message, n_results)
         return self.retriever.get_context(results)
 
-    def reload_collection(self)->CollectionResult:
+    def reload_collection(self) -> CollectionResult:
         """
         Discover files under collection_path, index changed ones.
         Returns CollectionResult.
@@ -66,7 +68,7 @@ class RagClient:
             return result
         return self.indexer.index_files(result.files)
 
-    def list_files(self, path: Path | str)->CollectionResult:
+    def list_files(self, path: Path | str) -> CollectionResult:
         """Recursively list .md paths under path and convert PDFs to .md."""
         files, errors, pdfs_to_convert = self._discover_files(path, 0)
         if pdfs_to_convert:
@@ -120,16 +122,18 @@ class RagClient:
             return
         # if pdf file, check if .md file exists and is newer than the pdf
         md_path = filepath.with_suffix(".md")
-        if not (md_path.exists() and filepath.stat().st_mtime <= md_path.stat().st_mtime):
+        if not (
+            md_path.exists() and filepath.stat().st_mtime <= md_path.stat().st_mtime
+        ):
             pdfs_to_convert.append(str(filepath.resolve()))
             return
         md_file = str(md_path.resolve())
         if md_file not in files:
             files.append(md_file)
-        md_from_pdfs.add(md_file) # set is idempotent
+        md_from_pdfs.add(md_file)  # set is idempotent
 
     @staticmethod
-    def _valid_file(filepath: Path)->bool:
+    def _valid_file(filepath: Path) -> bool:
         """Returns True if path is a file with .pdf or .md extension."""
         if not filepath.is_file():
             return False
@@ -141,8 +145,7 @@ class RagClient:
         converted_files = []
         with ThreadPoolExecutor(max_workers=2) as executor:
             future_to_pdf = {
-                executor.submit(self._extract_text_from_pdf, pdf):pdf
-                for pdf in pdfs
+                executor.submit(self._extract_text_from_pdf, pdf): pdf for pdf in pdfs
             }
             for future in as_completed(future_to_pdf):
                 try:

@@ -4,19 +4,20 @@ import re
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+
 class TextSplitter:
     """Splits markdown into sections on chapter headers, sub-splits sections over chunk_size"""
 
     DEFAULT_CHUNK_SIZE = 2000
     DEFAULT_CHUNK_OVERLAP = 200
 
-    def __init__(self,
+    def __init__(
+        self,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
-        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
     ):
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
         )
 
     def split(self, file):
@@ -40,20 +41,20 @@ class TextSplitter:
     @staticmethod
     def _split_on_headers(text):
         """Split on chapter-level headers into sections"""
-        header_pattern = r'^##\s+\*\*\d+\s'
+        header_pattern = r"^##\s+\*\*\d+\s"
         sections = []
         current_section = []
-        lines = text.split('\n')
+        lines = text.split("\n")
         for line in lines:
             match = re.match(header_pattern, line)
             if not match:
                 current_section.append(line)
                 continue
             # if header matches
-            if current_section: # add current section to sections
-                sections.append('\n'.join(current_section))
+            if current_section:  # add current section to sections
+                sections.append("\n".join(current_section))
             # start new section
             current_section = [line]
-        if current_section: # add last section
-            sections.append('\n'.join(current_section))
+        if current_section:  # add last section
+            sections.append("\n".join(current_section))
         return sections

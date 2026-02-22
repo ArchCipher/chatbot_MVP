@@ -6,6 +6,7 @@ import requests
 
 GITHUB_BASE_URL = "https://github.com/"
 
+
 class GithubDownloader:
     """
     Downloads files from a GitHub repository.
@@ -14,20 +15,18 @@ class GithubDownloader:
     Override the config parameter to change this behavior.
     """
 
-    DEFAULT_CONFIG = {
-            "extensions": [".md"],
-            "exclude_files": ["README.md"]
-        }
+    DEFAULT_CONFIG = {"extensions": [".md"], "exclude_files": ["README.md"]}
     MAX_WORKERS = 5
     MAX_RECURSION_DEPTH = 3
 
-    def __init__(self,
-            repo_url: str,
-            target_dir: Path | str,
-            http_client=requests,
-            token: str | None = None,
-            config: dict | None = None
-        ):
+    def __init__(
+        self,
+        repo_url: str,
+        target_dir: Path | str,
+        http_client=requests,
+        token: str | None = None,
+        config: dict | None = None,
+    ):
         # validate repo url
         if not repo_url or not repo_url.startswith(GITHUB_BASE_URL):
             raise ValueError("Invalid repo URL")
@@ -37,7 +36,7 @@ class GithubDownloader:
         # initialize
         self.config = {**self.DEFAULT_CONFIG, **(config or {})}
         self.headers = {"Authorization": f"token {token}"} if token else {}
-        self.repo_url = repo_url.rstrip('/')
+        self.repo_url = repo_url.rstrip("/")
         self.target_dir = target_dir
         self.http_client = http_client
 
@@ -68,7 +67,9 @@ class GithubDownloader:
                 continue
             rel_path = f"{path_prefix}/{name}" if path_prefix else name
             if item.get("type") == "dir":
-                rec_files = self._fetch_files_recursive(contents_url, rel_path, depth + 1)
+                rec_files = self._fetch_files_recursive(
+                    contents_url, rel_path, depth + 1
+                )
                 files.extend(rec_files)
             elif self._valid_file(item):
                 files.append(rel_path)
@@ -96,7 +97,7 @@ class GithubDownloader:
         raw_url = GitHubURLTransformer._get_raw_url(self.repo_url)
         with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
             future_to_file = {
-                executor.submit(self._download_file, raw_url, file):file
+                executor.submit(self._download_file, raw_url, file): file
                 for file in files
             }
             files_downloaded = []
@@ -116,7 +117,7 @@ class GithubDownloader:
             "total files": len(files),
             "skipped file count": files_skipped,
             "downloaded files": files_downloaded,
-            "errors": errors
+            "errors": errors,
         }
 
     def _download_file(self, raw_url, file):
@@ -132,6 +133,7 @@ class GithubDownloader:
             f.write(response.text)
         return True
 
+
 class GitHubURLTransformer:
     """Transforms GitHub web URLs to API contents URL and raw content URL."""
 
@@ -143,16 +145,13 @@ class GitHubURLTransformer:
     def _get_contents_url(url):
         """Convert github.com/org/repo/tree/branch to api.github.com/repos/org/repo/contents."""
         branch = GitHubURLTransformer._get_branch_from_url(url)
-        url = url.replace(
-            GITHUB_BASE_URL,
-            GitHubURLTransformer.GITHUB_API_BASE_URL
-            )
+        url = url.replace(GITHUB_BASE_URL, GitHubURLTransformer.GITHUB_API_BASE_URL)
         for prefix in GitHubURLTransformer.BRANCH_PREFIXES:
             if prefix in url:
                 to_remove = prefix + branch
                 url = url.replace(to_remove, "/contents")
-                return url.rstrip('/')
-        return url.rstrip('/')
+                return url.rstrip("/")
+        return url.rstrip("/")
 
     @staticmethod
     def _get_branch_from_url(url):
@@ -160,18 +159,15 @@ class GitHubURLTransformer:
         for prefix in GitHubURLTransformer.BRANCH_PREFIXES:
             if prefix in url:
                 branch = url.split(prefix, 1)[1]
-                branch = branch.rstrip('/')
-                return branch.split('/')[0]
-        return 'master'
+                branch = branch.rstrip("/")
+                return branch.split("/")[0]
+        return "master"
 
     @staticmethod
     def _get_raw_url(url):
         """Convert github.com/org/repo/tree|blob/branch to raw.githubusercontent.com/org/repo/branch."""
-        url = url.replace(
-            GITHUB_BASE_URL,
-            GitHubURLTransformer.GITHUB_RAW_BASE_URL
-            )
+        url = url.replace(GITHUB_BASE_URL, GitHubURLTransformer.GITHUB_RAW_BASE_URL)
         if "/tree" in url or "/blob" in url:
             url = url.replace("/tree", "", 1)
             url = url.replace("/blob", "", 1)
-        return url.rstrip('/')
+        return url.rstrip("/")

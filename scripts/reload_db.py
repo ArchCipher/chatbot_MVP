@@ -12,18 +12,19 @@ from chroma import RagClient
 
 # instantiate RagClient
 rag_client = RagClient(
-        name=os.getenv("COLLECTION_NAME", "my-collection"),
-        persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
-        collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
-        hash_filename=os.getenv("HASH_FILE", "file_hashes.json")
-    )
+    name=os.getenv("COLLECTION_NAME", "my-collection"),
+    persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
+    collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
+    hash_filename=os.getenv("HASH_FILE", "file_hashes.json"),
+)
+
 
 def main():
     logging.basicConfig(
-        filename='chatbot.log',
+        filename="chatbot.log",
         level=logging.INFO,
-        format= '[%(asctime)s][%(levelname)s][%(name)s][%(message)s]'
-        )
+        format="[%(asctime)s][%(levelname)s][%(name)s][%(message)s]",
+    )
     # Reload documents
     response = rag_client.reload_collection()
     log = f"Collection reloaded: {len(response.files)} Files indexed: {response.files}, Errors: {response.errors}"
@@ -31,6 +32,7 @@ def main():
         logger.error(log)
     else:
         logger.info(log)
+
 
 if __name__ == "__main__":
     main()

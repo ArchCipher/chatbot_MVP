@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger("FileHashManager")
 
+
 class FileHashManager:
     """
     Manage file hashes saved in JSON file.
@@ -31,7 +32,7 @@ class FileHashManager:
         except Exception as e:
             logger.warning(f"Error loading file hashes: {e}")
             return {}
-    
+
     def save(self, hashes):
         try:
             with open(self.hash_file, "w", encoding="utf-8") as f:

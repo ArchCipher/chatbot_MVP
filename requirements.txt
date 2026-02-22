@@ -11,3 +11,6 @@ uvicorn
 
 # github_downloader
 requests
+
+# formatting
+black

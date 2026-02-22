@@ -12,6 +12,7 @@ Lets you ask questions over your own documents and get answers grounded in them.
 
 - Python: Version 3.10 - 3.12
 - Dependencies: Check [requirements.txt](./requirements.txt)
+- Formatting: [Black](https://github.com/psf/black) (included in requirements)
 
 ## Installation
 Make sure you create a virtual environment, activate it, and then install all dependencies mentioned in `requirements.txt`
@@ -180,6 +181,16 @@ curl -X POST http://127.0.0.1:8000/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "What is PRE30-C?", "session_id": 1}'
 ```
+
+## Formatting
+
+Format code with [Black](https://github.com/psf/black) (install via `pip install -r requirements.txt`):
+
+```bash
+make fmt
+```
+
+Check only (no write): `black --check .`
 
 ## File structure
 

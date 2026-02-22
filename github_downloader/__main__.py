@@ -7,6 +7,7 @@ from . import GithubDownloader, urls
 
 logger = logging.getLogger("github_downloader")
 
+
 def main():
     """
     Download each repo from urls into COLLECTION_PATH/<name>
@@ -18,8 +19,8 @@ def main():
     logging.basicConfig(
         filename=filename,
         level=logging.INFO,
-        format= '[%(asctime)s][%(levelname)s][%(name)s][%(message)s]'
-        )
+        format="[%(asctime)s][%(levelname)s][%(name)s][%(message)s]",
+    )
     project_root = Path(__file__).parent.parent
     name = os.getenv("COLLECTION_PATH", "source_docs")
     basedir = Path(project_root / name).resolve()
@@ -35,6 +36,7 @@ def main():
             logger.error(result)
         else:
             logger.info(result)
+
 
 if __name__ == "__main__":
     main()

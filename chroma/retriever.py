@@ -2,13 +2,14 @@
 
 import re
 
+
 class ChromaRetriever:
     """Retrieves chunks by semantic similarity, prepends rule chunk when message matches rule id."""
 
     def __init__(self, collection):
         self.collection = collection
 
-    def get_context(self, results)->str:
+    def get_context(self, results) -> str:
         """Format list of {content, metadata} into a single context string with source labels."""
         if not results:
             return ""
@@ -30,7 +31,7 @@ class ChromaRetriever:
         results = self.collection.query(
             query_texts=[message],
             n_results=n_results * 2,
-            include=["documents", "metadatas", "distances"]
+            include=["documents", "metadatas", "distances"],
         )
         if not results["documents"] or not results["documents"][0]:
             return []
@@ -45,22 +46,23 @@ class ChromaRetriever:
                 if doc_id in seen_ids:
                     continue
                 seen_ids.add(doc_id)
-            retrieved.append({
-                "content": doc,
-                "metadata": self._get_metadata(results, i),
-                "distance": self._get_distance(results, i)
-                })
+            retrieved.append(
+                {
+                    "content": doc,
+                    "metadata": self._get_metadata(results, i),
+                    "distance": self._get_distance(results, i),
+                }
+            )
         return retrieved[:n_results]
 
     def _get_rule_results(self, message, seen_ids, retrieved):
         """If message contains a CERT-style rule id, prepend that chunk and mark ids seen."""
-        rule_id_match = re.search(r'([A-Z]{3,}\d+-C(?:PP)?)', message.upper())
+        rule_id_match = re.search(r"([A-Z]{3,}\d+-C(?:PP)?)", message.upper())
         if not rule_id_match:
             return
         rule_id = rule_id_match.group(1)
         rule_results = self.collection.get(
-            where={"rule_id": rule_id},
-            include=["documents", "metadatas"]
+            where={"rule_id": rule_id}, include=["documents", "metadatas"]
         )
         if not rule_results["ids"]:
             return
@@ -68,11 +70,7 @@ class ChromaRetriever:
             seen_ids.add(doc_id)
             doc = rule_results["documents"][idx]
             meta = rule_results["metadatas"][idx] if rule_results["metadatas"] else {}
-            retrieved.append({
-                "content": doc,
-                "metadata": meta,
-                "distance": 0.0
-            })
+            retrieved.append({"content": doc, "metadata": meta, "distance": 0.0})
 
     @staticmethod
     def _get_metadata(results, i):
@@ -82,7 +80,7 @@ class ChromaRetriever:
         if i >= len(results["metadatas"][0]):
             return {}
         return results["metadatas"][0][i]
-    
+
     @staticmethod
     def _get_distance(results, i):
         """Get distance for i-th document in Chroma query result."""
