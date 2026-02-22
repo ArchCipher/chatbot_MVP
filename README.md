@@ -12,7 +12,6 @@ Lets you ask questions over your own documents and get answers grounded in them.
 
 - Python: Version 3.10 - 3.12
 - Dependencies: Check [requirements.txt](./requirements.txt)
-- Formatting: [Black](https://github.com/psf/black) (included in requirements)
 
 ## Installation
 Make sure you create a virtual environment, activate it, and then install all dependencies mentioned in `requirements.txt`
