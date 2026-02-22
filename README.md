@@ -181,16 +181,51 @@ curl -X POST http://127.0.0.1:8000/chat \
   -d '{"message": "What is PRE30-C?", "session_id": 1}'
 ```
 
+## File structure
+
+chatbot/
+├── README.md
+├── requirements.txt
+├── .env.example
+├── chatbot.py
+│
+├── chroma/
+│   ├── __init__.py
+│   ├── chroma.py
+│   ├── indexer.py
+│   ├── retriever.py
+│   ├── hash_manager.py
+│   └── text_splitter.py
+│
+├── github_downloader/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── github_downloader.py
+│   └── README.md
+│
+├── scripts/
+│   ├── __init__.py
+│   ├── reload_db.py
+│   └── remove_db_files.py
+│
+├── curl_scripts/
+│   ├── test_health.sh
+│   ├── test_chatbot.sh
+│   └── tests.sh
+│
+└── docs/
+    ├── sample_retrieval_output.md
+    └── sample_file_hashes.json
+
 ## Files Reference
-- Main implementation: [chatbot.py](chatbot.py) – FastAPI app and RAG logic
-- ChromaDB client implementation: [chroma.py](chroma.py) – Vector database operations
+- Main implementation: [chatbot.py](chatbot.py) – FastAPI app. RAG and vector DB in the [chroma/](chroma/) package
 - Configuration: [requirements.txt](requirements.txt), [.env.example](.env.example)
 - Packages
-  - TODO Chroma
+  - [chroma/](chroma/) - ChromaDB client implementation with vector database operations
   - [github_downloader/](github_downloader/) - see [github_downloader/README.md](./github_downloader/README.md)
 - Scripts: [scripts/](scripts/)
-  - [remove_files.py](scripts/remove_files.py) - script to remove file from Chroma collection. Run using `python -m scripts.remove_files`
   - [reload_db.py](scripts/reload_db.py) - script to reload Chroma collection. Run using `python -m scripts.reload_db`
+  - [remove_db_files.py](scripts/remove_db_files.py) - script to remove file from Chroma collection. Run using `python -m scripts.remove_db_files`
 - Curl scripts: [curl_scripts/](curl_scripts/)
   - [test_health.sh](curl_scripts/test_health.sh) – Test GET / endpoint
   - [test_chatbot.sh](curl_scripts/test_chatbot.sh) - Test POST /chat endpoint

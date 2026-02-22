@@ -6,16 +6,12 @@ FastAPI client for RAG chatbot
 - Pydantic: data validation library for Python
 - dotenv/ os: load environment variables from .env file
 - google-genai: Google GenAI API client
-- chroma.py: ChromaDB client implementation
+- chroma: ChromaDB/ RAG client implementation
 '''
 
 import asyncio
 import os
 import logging
-
-logger = logging.getLogger("chatbot")
-
-# TODO: LoggingMiddleware for FastAPI and ChromaDB
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -23,32 +19,19 @@ from google import genai
 from pydantic import BaseModel
 import uvicorn
 
-# Load environment variables
-load_dotenv()
-
-api_key=os.getenv("GEMINI_API_KEY")
-if not api_key:
-    raise ValueError("GEMINI_API_KEY is not set")
-
-app = FastAPI()
-genai_client = genai.Client(api_key=api_key)
-
 from chroma import RagClient
 
-# instantiate RagClient
-rag_client = RagClient(
-        name=os.getenv("COLLECTION_NAME", "my-collection"),
-        persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
-        collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
-        hash_filename=os.getenv("HASH_FILE", "file_hashes.json")
-    )
+# Logging
+logger = logging.getLogger("chatbot")
 
 # Pydantic request and response models
 class ChatRequest(BaseModel):
+    """Incoming chat message and session identifier."""
     session_id: int
     message: str
 
 class ChatResponse(BaseModel):
+    """LLM reply returned from /chat."""
     reply: str
 
 # Constants
@@ -57,20 +40,40 @@ the source documents to answer questions accurately. If the context doesn't
 contain relevant information, you can use your general knowledge but mention
 that the information isn't from the source documents. Be concise and helpful."""
 
-# API endpoint for health check
+# Load environment variables
+load_dotenv()
+
+# get Gemini API key
+api_key=os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY is not set")
+# instantiate LLM client: Gemini
+genai_client = genai.Client(api_key=api_key)
+
+# instantiate RAG client: ChromaDB
+rag_client = RagClient(
+        name=os.getenv("COLLECTION_NAME", "my-collection"),
+        persistent_storage=os.getenv("PERSISTENT_STORAGE", "./chroma_db"),
+        collection_path=os.getenv("COLLECTION_PATH", "source_docs"),
+        hash_filename=os.getenv("HASH_FILE", "file_hashes.json")
+    )
+
+# instantiate FastAPI app
+app = FastAPI()
+
 @app.get("/")
 def root():
+    """Health check."""
     return {"message": "Hello World"}
 
-# API endpoint to chat with the bot
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    # Generate response with RAG context retrieval
+    """Retrieve RAG context and generate reply."""
     reply = generate_response(req.message, rag_client.get_context(req.message))
     return ChatResponse(reply=reply)
 
 def generate_response(message, context):
-    # build prompt
+    """Build prompt and call LLM client. Returns reply text or raise HTTPException."""
     if context:
         prompt = f"""Please answer the question based on the context below when relevant:
 Context from source documents: {context}
@@ -95,6 +98,7 @@ Answer: """
     return response.text
 
 async def main():
+    """Configure logging, reload Chroma collection, then run Uvicorn."""
     # Configure logging
     logging.basicConfig(
         filename='chatbot.log',
@@ -103,11 +107,10 @@ async def main():
         )
     # Reload documents
     response = rag_client.reload_collection()
-    status = response["status"]
-    log = f"Documents reloaded: status: {status}, {len(response['files indexed'])} Files indexed: {response['files indexed']}, Errors: {response['errors']}"
-    if status == "error":
+    log = f"Collection reloaded: {len(response.files)} Files indexed: {response.files}, Errors: {response.errors}"
+    if response.errors:
         logger.error(log)
-        raise RuntimeError("Reload failed")
+        raise RuntimeError("Collection reload failed")
     logger.info(log)
     # Run Uvicorn programmatically
     config = uvicorn.Config("chatbot:app", port=8000) # use reload=True if not production

@@ -26,9 +26,8 @@ def main():
         )
     # Reload documents
     response = rag_client.reload_collection()
-    status = response["status"]
-    log = f"Documents reloaded: status: {status}, {len(response['files indexed'])} Files indexed: {response['files indexed']}, Errors: {response['errors']}"
-    if status == "error":
+    log = f"Collection reloaded: {len(response.files)} Files indexed: {response.files}, Errors: {response.errors}"
+    if response.errors:
         logger.error(log)
     else:
         logger.info(log)

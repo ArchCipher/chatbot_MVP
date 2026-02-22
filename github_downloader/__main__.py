@@ -8,6 +8,10 @@ from . import GithubDownloader, urls
 logger = logging.getLogger("github_downloader")
 
 def main():
+    """
+    Download each repo from urls into COLLECTION_PATH/<name>
+    Log to github_downloader.log.
+    """
     load_dotenv()
     downloader_root = Path(__file__).parent
     filename = downloader_root / "github_downloader.log"
