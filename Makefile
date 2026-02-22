@@ -1,5 +1,3 @@
-all: init run
-
 init:
 	pip install -r requirements.txt
 
