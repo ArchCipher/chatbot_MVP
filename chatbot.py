@@ -108,27 +108,17 @@ Answer: """
 
 
 async def main():
-    """Configure logging, reload Chroma collection, then run Uvicorn."""
+    """Configure logging, and run Uvicorn."""
+    # Configure logging to file or stdout
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s:     %(name)s: %(message)s: %(asctime)s",
+    )
     log_file = os.getenv("LOG_FILE")
     if log_file:
-        logging.basicConfig(
-            filename=log_file,
-            level=logging.INFO,
-            format="[%(asctime)s][%(levelname)s][%(name)s][%(message)s]",
-        )
+        logging.basicConfig(filename=log_file)
     else:
-        logging.basicConfig(
-            stream=sys.stdout,
-            level=logging.INFO,
-            format="[%(asctime)s][%(levelname)s][%(name)s][%(message)s]",
-        )
-    # Reload documents
-    response = rag_client.reload_collection()
-    log = f"Collection reloaded: {len(response.files)} Files indexed: {response.files}, Errors: {response.errors}"
-    if response.errors:
-        logger.error(log)
-        raise RuntimeError("Collection reload failed")
-    logger.info(log)
+        logging.basicConfig(stream=sys.stdout)
     # Run Uvicorn programmatically
     config = uvicorn.Config(
         "chatbot:app", port=8000
