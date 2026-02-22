@@ -14,6 +14,7 @@ Lets you ask questions over your own documents and get answers grounded in them.
 - Dependencies: Check [requirements.txt](./requirements.txt)
 
 ## Installation
+
 Make sure you create a virtual environment, activate it, and then install all dependencies mentioned in `requirements.txt`
 
 ```sh
@@ -23,19 +24,22 @@ source .venv/bin/activate   # activate venv
 pip install -r requirements.txt # install dependencies
 ```
 
-## Configuration:
+## Configuration
 
 - Create `.env` file with variables mentioned in [.env.example](./.env.example)
 
 - Use a folder named `source_docs` for your documents, or set the `COLLECTION_PATH` env variable to your folder path. To fetch docs from GitHub into source_docs, see [github_downloader/README.md](./github_downloader/README.md).
 
-**Note:** The chatbot accepts any markdown/pdf documents you provide. PDFs are automatically converted to markdown during indexing. The `source_docs` folder is not included in this repository—you must add your own documents. 
+**Note:** The chatbot accepts any markdown/pdf documents you provide. PDFs are automatically converted to markdown during indexing. The `source_docs` folder is not included in this repository—you must add your own documents.
 
 - The vectordb uses persistent storage (default `./chroma_db`). Override with `PERSISTENT_STORAGE` in `.env` (see [.env.example](./.env.example)).
 
 - File modification times are stored in a JSON file there (default `file_hashes.json`, override `HASH_FILE`) for incremental re-indexing. Format: [sample_file_hashes.json](docs/sample_file_hashes.json).
 
+- Logging goes to standard output by default. Set `LOG_FILE` in `.env` (e.g. `LOG_FILE=chatbot.log`) to write logs to a file.
+
 ## Run
+
 To run programmatically:
 `python chatbot.py`
 
@@ -72,13 +76,13 @@ flowchart LR
 ```
 
 **Components:**
-- **Chunking**: 
+- **Chunking**:
   1. Header-based splitting: Regex-based splitting on chapter-level markdown headers (`## \*\*\d+ `) to preserve semantic boundaries
   2. Recursive character splitting: [langchain_text_splitters.RecursiveCharacterTextSplitter](https://docs.langchain.com/oss/python/integrations/splitters) for further chunking if sections exceed chunk_size (configurable via `CHUNK_SIZE`, `CHUNK_OVERLAP`)
 - **Vector Database**: [chromadb](https://github.com/chroma-core/chroma) (embedding and indexing)
 - **LLM**: [google-genai](https://github.com/googleapis/python-genai) (Gemini 2.5 Flash)
 
-**Note:** 
+**Note:**
 
 Docs are loaded from the collection folder at server startup (default `source_docs`, overridable via `COLLECTION_PATH`). Reload when you update docs.
 
@@ -96,7 +100,7 @@ For a rule-specific query, the retrieval pipeline prepends the matching rule chu
 
 Example `query_summary` (concise): `distances: [0.0, 1.28, 1.33, ...], rules_found_in_chunks: ["PRE30-C"]`. See [sample retrieval output](docs/sample_retrieval_output.md) for a short sanitized log excerpt. The sample uses [SEI CERT C and C++ Coding Standards](https://www.sei.cmu.edu/library/sei-cert-c-and-c-coding-standards/)(2016 editions)
 
-## Future improvement:
+## Future improvement
 
 ### Core Stability
 - **Distance-based filtering**: Use the distance returned by get_query_results in get_context (e.g. only include chunks with distance below a threshold, or within a narrow range)
@@ -228,6 +232,7 @@ chatbot/
     └── sample_file_hashes.json
 
 ## Files Reference
+
 - Main implementation: [chatbot.py](chatbot.py) – FastAPI app. RAG and vector DB in the [chroma/](chroma/) package
 - Configuration: [requirements.txt](requirements.txt), [.env.example](.env.example)
 - Packages

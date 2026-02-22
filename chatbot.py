@@ -11,6 +11,7 @@ FastAPI client for RAG chatbot
 
 import asyncio
 import os
+import sys
 import logging
 
 from dotenv import load_dotenv
@@ -107,20 +108,17 @@ Answer: """
 
 
 async def main():
-    """Configure logging, reload Chroma collection, then run Uvicorn."""
-    # Configure logging
+    """Configure logging, and run Uvicorn."""
+    # Configure logging to file or stdout
     logging.basicConfig(
-        filename="chatbot.log",
         level=logging.INFO,
-        format="[%(asctime)s][%(levelname)s][%(name)s][%(message)s]",
+        format="%(levelname)s:     %(name)s: %(message)s: %(asctime)s",
     )
-    # Reload documents
-    response = rag_client.reload_collection()
-    log = f"Collection reloaded: {len(response.files)} Files indexed: {response.files}, Errors: {response.errors}"
-    if response.errors:
-        logger.error(log)
-        raise RuntimeError("Collection reload failed")
-    logger.info(log)
+    log_file = os.getenv("LOG_FILE")
+    if log_file:
+        logging.basicConfig(filename=log_file)
+    else:
+        logging.basicConfig(stream=sys.stdout)
     # Run Uvicorn programmatically
     config = uvicorn.Config(
         "chatbot:app", port=8000
