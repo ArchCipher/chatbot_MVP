@@ -1,0 +1,10 @@
+[project]
+name = "chatbot-mvp"
+requires-python = ">=3.10,<3.13" # Python 3.10 - 3.12
+
+[tool.ruff]
+target-version = "py312" # Python 3.12
+line-length = 88 # 88 characters per line
+
+[tool.ruff.format]
+quote-style = "double" # Use double quotes for strings

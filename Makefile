@@ -4,10 +4,11 @@ init:
 run:
 	python chatbot.py
 
-fmt:
-	black .
+check:
+	ruff format .
+	ruff check --fix .
 
 test:
 	python -m unittest discover tests
 
-.PHONY: fmt init run test
+.PHONY: check init run test
