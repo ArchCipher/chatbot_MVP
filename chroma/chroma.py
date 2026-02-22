@@ -10,7 +10,6 @@ from pathlib import Path
 import threading
 
 import chromadb
-import pymupdf.layout
 import pymupdf4llm
 
 from chroma.indexer import ChromaIndexer

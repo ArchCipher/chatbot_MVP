@@ -3,8 +3,6 @@ Download markdown (and other) files from GitHub repo trees.
 Run via python -m github_downloader.
 """
 
-from .github_downloader import GithubDownloader
-
 urls = [
     {"name": "ASVS", "url": "https://github.com/OWASP/ASVS/tree/master/5.0/en/"},
     {
