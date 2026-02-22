@@ -7,6 +7,7 @@ frontend.md
 notes.md
 python.md
 .env
-source_docs
+source_docs/*
+!source_docs/.gitkeep
 chroma_db
 debug
