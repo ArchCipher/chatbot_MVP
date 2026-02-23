@@ -1,6 +1,5 @@
 """ChromaDB indexing: chunk documents, add/update/remove in collection, track file mtimes."""
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import logging
 from pathlib import Path
@@ -25,23 +24,18 @@ class ChromaIndexer:
         files_to_process = self._get_files_to_process(files)
         files_indexed = []
         errors = []
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            future_to_file = {
-                executor.submit(self._process_file, file): file
-                for file in files_to_process
-            }
-            for future in as_completed(future_to_file):
-                file = future_to_file[future]
-                try:
-                    if future.result():
-                        files_indexed.append(file)
-                        self.hash_manager.update(file)
-                except Exception as e:
-                    errors.append(f"Error processing file {file}: {e}")
-                    for f in future_to_file:
-                        if not f.done():
-                            f.cancel()
-                    break
+        for file in files_to_process:
+            try:
+                chunks = self.text_splitter.split(file)
+                norm_file = str(Path(file).resolve())
+                for chunk_index, chunk in enumerate(chunks):
+                    if chunk.strip():
+                        self._add_chunk(chunk, norm_file, chunk_index)
+                files_indexed.append(file)
+                self.hash_manager.update(file)
+            except Exception as e:
+                errors.append(f"Error processing file {file}: {e}")
+                break
         if files_indexed:
             self.hash_manager.save(self.hash_manager.file_hashes)
         return CollectionResult(files=files_indexed, errors=errors)
@@ -73,7 +67,10 @@ class ChromaIndexer:
         """Delete all documents in collection and clear hash file."""
         try:
             with self.lock:
-                self.collection.delete()
+                existing = self.collection.get(include=[])
+                ids = existing.get("ids") or []
+                if ids:
+                    self.collection.delete(ids=ids)
                 self.hash_manager.file_hashes = {}
                 self.hash_manager.save(self.hash_manager.file_hashes)
         except Exception as e:
@@ -91,15 +88,6 @@ class ChromaIndexer:
                 continue
             files_to_process.append(norm_file)
         return files_to_process
-
-    def _process_file(self, file):
-        """Split file into chunks and add each to collection."""
-        chunks = self.text_splitter.split(file)
-        norm_file = str(Path(file).resolve())
-        for chunk_index, chunk in enumerate(chunks):
-            if chunk.strip():
-                self._add_chunk(chunk, norm_file, chunk_index)
-        return True
 
     def _add_chunk(self, chunk, source, chunk_index):
         """Add a chunk to collection"""

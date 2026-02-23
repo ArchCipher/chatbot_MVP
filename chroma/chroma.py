@@ -51,7 +51,7 @@ class RagClient:
         # store collection path
         self.collection_path = collection_path
 
-    def get_context(self, message, n_results=5):
+    def get_context(self, message, n_results=50):
         """Return formatted context string from top n_results chunks for message."""
         results = self.retriever.get_query_results(message, n_results)
         return self.retriever.get_context(results)

@@ -41,7 +41,7 @@ class TextSplitter:
     @staticmethod
     def _split_on_headers(text):
         """Split on chapter-level headers into sections"""
-        header_pattern = r"^##\s+\*\*\d+\s"
+        header_pattern = r"^## "
         sections = []
         current_section = []
         lines = text.split("\n")

@@ -30,11 +30,11 @@ for question in "${questions[@]}"; do
   echo ""
   echo "Response:"
   
-  curl -s -X POST ${BASE_URL}/chat_test \
+  curl -s -X POST ${BASE_URL}/chat \
     -H "Content-Type: application/json" \
     -d "{\"message\": \"$question\", \"session_id\": 1}" | \
     python3 -m json.tool 2>/dev/null || \
-    curl -s -X POST ${BASE_URL}/chat_test \
+    curl -s -X POST ${BASE_URL}/chat \
       -H "Content-Type: application/json" \
       -d "{\"message\": \"$question\", \"session_id\": 1}"
   
