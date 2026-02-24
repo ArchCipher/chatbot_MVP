@@ -1,6 +1,6 @@
 # GithubDownloader
 
-Downloads markdown from GitHub repo URLs into a target directory (default `source_docs`). Used to fetch docs from GitHub for the chatbot.
+Downloads markdown from GitHub repo URLs into a target directory (default `source_docs`). Used to fetch docs from GitHub for the chatbot. The list of repos to download is read from a JSON file.
 
 Note:
 
@@ -19,6 +19,29 @@ git sparse-checkout set <path_in_repo>
 - Python 3.10+
 - Dependencies: `requests`. Check [requirements.txt](../requirements.txt)
 
+## Input: JSON file
+
+The downloader reads repo URLs from **`urls.json`** in this package directory (`github_downloader/urls.json`). The repository includes an **example** [urls.json](./urls.json) that you can edit for your needs, or replace with your own list.
+
+**Format:** A JSON array of objects with `name` and `url`:
+
+```json
+[
+  {
+    "name": "Top10",
+  "url": "https://github.com/OWASP/Top10/blob/master/2025/docs/en/"
+  },
+  {
+    "name": "Proactive_Controls",
+    "url": "https://github.com/OWASP/www-project-proactive-controls/tree/master/docs/the-top-10"}
+]
+```
+
+- `name`: Used as the subdirectory under `COLLECTION_PATH` (e.g. `source_docs/Top10`).
+- `url`: GitHub tree or blob URL (e.g. `.../tree/master/...` or `.../blob/master/...`).
+
+If the file is missing or invalid, the program logs an error and exits.
+
 ## Run
 
 Make sure you create a virtual environment, activate it, then from repo root:
@@ -31,10 +54,7 @@ python -m github_downloader
 
 - **Env:** `GITHUB_TOKEN` (recommended for rate limits), `COLLECTION_PATH` (default `source_docs`).
 - **Constructor:** `config` (see class docstring).
-
-## Future improvements:
-
-- Add CLI arguments instead of hardcoded repo URLs. But there is a need to add a parser to split input or have one repo per run.
+- **Input:** [urls.json](./urls.json) — list of repos (example included; edit or replace for your use). See [Input: JSON file](#input-json-file) above.
 
 ---
 
