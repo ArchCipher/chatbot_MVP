@@ -32,7 +32,7 @@ class RagClient:
         persistent_storage: str = "chroma_db",
         collection_path: str = "source_docs",
         hash_filename: str = "file_hashes.json",
-    ):
+    ) -> None:
         """
         Create ChromaDB client, collection, indexer, and retriever.
         Hash file is stored under persistent_storage.
@@ -51,7 +51,7 @@ class RagClient:
         # store collection path
         self.collection_path = collection_path
 
-    def get_context(self, message, n_results=50):
+    def get_context(self, message: str, n_results: int = 50) -> str:
         """Return formatted context string from top n_results chunks for message."""
         results = self.retriever.get_query_results(message, n_results)
         return self.retriever.get_context(results)
@@ -75,10 +75,12 @@ class RagClient:
             files.extend(converted_files)
         return CollectionResult(files=files, errors=errors)
 
-    def _discover_files(self, path: Path | str, depth=0):
+    def _discover_files(
+        self, path: Path | str, depth: int = 0
+    ) -> tuple[list[str], list[str], list[str]]:
         """
         Recursively list .md paths under path
-        Returns (md file list, pdfs to convert).
+        Returns (md file list, errors, pdfs to convert).
         """
         files = []
         errors = []
@@ -105,14 +107,24 @@ class RagClient:
         return ret
 
     @staticmethod
-    def _merge_discovered_files(files, errors, pdfs_to_convert, subdir):
+    def _merge_discovered_files(
+        files: list[str],
+        errors: list[str],
+        pdfs_to_convert: list[str],
+        subdir: tuple[list[str], list[str], list[str]],
+    ) -> None:
         subdir_files, subdir_errors, subdir_pdfs = subdir
         files.extend(subdir_files)
         errors.extend(subdir_errors)
         pdfs_to_convert.extend(subdir_pdfs)
 
     @staticmethod
-    def _categorise_file(filepath, files, pdfs_to_convert, md_from_pdfs):
+    def _categorise_file(
+        filepath: Path,
+        files: list[str],
+        pdfs_to_convert: list[str],
+        md_from_pdfs: set[str],
+    ) -> None:
         """Append file to files (as .md path) or to pdfs_to_convert, and track md from PDFs."""
         if filepath.suffix.lower() == ".md":
             md_file = str(filepath.resolve())
@@ -139,7 +151,7 @@ class RagClient:
         extension = filepath.suffix.lower()
         return extension in [".pdf", ".md"]
 
-    def _extract_text_from_pdfs(self, pdfs):
+    def _extract_text_from_pdfs(self, pdfs: list[str]) -> list[str]:
         """Convert PDFs to markdown in parallel"""
         converted_files = []
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -157,7 +169,7 @@ class RagClient:
         return converted_files
 
     @staticmethod
-    def _extract_text_from_pdf(pdf):
+    def _extract_text_from_pdf(pdf: str) -> str | None:
         """Convert one PDF to markdown"""
         extension = Path(pdf).suffix.lower()
         if extension != ".pdf":

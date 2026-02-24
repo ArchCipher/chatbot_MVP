@@ -10,17 +10,17 @@ from chroma.indexer import ChromaIndexer
 
 
 class TestGenerateMd5Hash(unittest.TestCase):
-    def test_deterministic_same_inputs(self):
+    def test_deterministic_same_inputs(self) -> None:
         out1 = ChromaIndexer._generate_md5_hash("hello", "/path/to/file.md")
         out2 = ChromaIndexer._generate_md5_hash("hello", "/path/to/file.md")
         self.assertEqual(out1, out2)
 
-    def test_different_content_different_hash(self):
+    def test_different_content_different_hash(self) -> None:
         a = ChromaIndexer._generate_md5_hash("chunk A", "/f.md")
         b = ChromaIndexer._generate_md5_hash("chunk B", "/f.md")
         self.assertNotEqual(a, b)
 
-    def test_different_source_different_hash(self):
+    def test_different_source_different_hash(self) -> None:
         a = ChromaIndexer._generate_md5_hash("same text", "/path/a.md")
         b = ChromaIndexer._generate_md5_hash("same text", "/path/b.md")
         self.assertNotEqual(a, b)

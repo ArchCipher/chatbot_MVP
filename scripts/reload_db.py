@@ -18,7 +18,7 @@ rag_client = RagClient(
 )
 
 
-def main():
+def main() -> None:
     logging.basicConfig(
         filename="chatbot.log",
         level=logging.INFO,

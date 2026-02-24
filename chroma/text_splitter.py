@@ -15,12 +15,12 @@ class TextSplitter:
         self,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
-    ):
+    ) -> None:
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap
         )
 
-    def split(self, file):
+    def split(self, file: str) -> list[str]:
         """
         Read .md file, split on headers, then by chunk_size/overlap.
         Return list of chunk strings.
@@ -39,7 +39,7 @@ class TextSplitter:
         return all_chunks
 
     @staticmethod
-    def _split_on_headers(text):
+    def _split_on_headers(text: str) -> list[str]:
         """Split on chapter-level headers into sections"""
         header_pattern = r"^## "
         sections = []

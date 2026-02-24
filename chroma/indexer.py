@@ -19,7 +19,7 @@ class ChromaIndexer:
         self.text_splitter = text_splitter
         self.hash_manager = hash_manager
 
-    def index_files(self, files):
+    def index_files(self, files: list[str]) -> CollectionResult:
         """Index only changed files (by mtime)"""
         files_to_process = self._get_files_to_process(files)
         files_indexed = []
@@ -40,7 +40,7 @@ class ChromaIndexer:
             self.hash_manager.save(self.hash_manager.file_hashes)
         return CollectionResult(files=files_indexed, errors=errors)
 
-    def remove_files(self, files) -> list[str]:
+    def remove_files(self, files: list[str]) -> list[str]:
         """Delete chunks for given source paths from collection and hash file"""
         files_removed = []
         file_hashes = self.hash_manager.file_hashes
@@ -63,7 +63,7 @@ class ChromaIndexer:
             self.hash_manager.save(file_hashes)
         return files_removed
 
-    def clear(self):
+    def clear(self) -> None:
         """Delete all documents in collection and clear hash file."""
         try:
             with self.lock:
@@ -76,7 +76,7 @@ class ChromaIndexer:
         except Exception as e:
             logger.error(f"Error clearing collection: {e}")
 
-    def _get_files_to_process(self, files):
+    def _get_files_to_process(self, files: list[str]) -> list[str]:
         """Return list of files that are new or have mtime different from stored hash."""
         files_to_process = []
         for file in files:
@@ -89,7 +89,7 @@ class ChromaIndexer:
             files_to_process.append(norm_file)
         return files_to_process
 
-    def _add_chunk(self, chunk, source, chunk_index):
+    def _add_chunk(self, chunk: str, source: str, chunk_index: int) -> None:
         """Add a chunk to collection"""
         chunk_id = self._generate_md5_hash(chunk, source)
         # match rule_id: ## **(numbers).(numbers)(spaces)(rule_id).
@@ -123,7 +123,7 @@ class ChromaIndexer:
             self.collection.add(documents=[chunk], metadatas=[meta], ids=[chunk_id])
 
     @staticmethod
-    def _generate_md5_hash(text, source):
+    def _generate_md5_hash(text: str, source: str) -> str:
         """Generate chunk id from source path and content."""
         data = f"{source}:{text}"
         return hashlib.md5(data.encode("utf-8")).hexdigest()

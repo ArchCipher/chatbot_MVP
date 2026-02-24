@@ -69,19 +69,19 @@ app = FastAPI()
 
 
 @app.get("/")
-def root():
+def root() -> dict[str, str]:
     """Health check."""
     return {"message": "Hello World"}
 
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
+def chat(req: ChatRequest) -> ChatResponse:
     """Retrieve RAG context and generate reply."""
     reply = generate_response(req.message, rag_client.get_context(req.message))
     return ChatResponse(reply=reply)
 
 
-def generate_response(message, context):
+def generate_response(message: str, context: str) -> str:
     """Build prompt and call LLM client. Returns reply text or raise HTTPException."""
     if context:
         prompt = f"""Please answer the question based on the context below when relevant:
@@ -107,7 +107,7 @@ Answer: """
     return response.text
 
 
-async def main():
+async def main() -> None:
     """Configure logging, and run Uvicorn."""
     # Configure logging to file or stdout
     logging.basicConfig(

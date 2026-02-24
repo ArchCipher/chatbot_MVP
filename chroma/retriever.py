@@ -1,15 +1,19 @@
 """ChromaDB retrieval: semantic search plus rule-id boost for CERT-style queries."""
 
 import re
+from typing import Any
+
+# Chroma query result item: content, metadata, optional distance
+RetrievalResult = dict[str, Any]
 
 
 class ChromaRetriever:
     """Retrieves chunks by semantic similarity, prepends rule chunk when message matches rule id."""
 
-    def __init__(self, collection):
+    def __init__(self, collection: Any) -> None:
         self.collection = collection
 
-    def get_context(self, results) -> str:
+    def get_context(self, results: list[RetrievalResult]) -> str:
         """Format list of {content, metadata} into a single context string with source labels."""
         if not results:
             return ""
@@ -20,7 +24,7 @@ class ChromaRetriever:
             context_chunks.append(f"[source {i}: {source}]\n{content}")
         return "\n\n".join(context_chunks)
 
-    def get_query_results(self, message, n_results):
+    def get_query_results(self, message: str, n_results: int) -> list[RetrievalResult]:
         """
         Rule-id match first (if any), then semantic search.
         Dedupe and return up to n_results.
@@ -33,16 +37,15 @@ class ChromaRetriever:
             n_results=n_results * 2,
             include=["documents", "metadatas", "distances"],
         )
-        if not results["documents"] or not results["documents"][0]:
-            return []
-        result_ids = []
-        if results.get("ids"):
-            result_ids = results["ids"][0]
-        for i, doc in enumerate(results["documents"][0]):
+        documents = results.get("documents")
+        if not documents or not documents[0]:
+            return retrieved
+        ids = results["ids"][0] if results.get("ids") else []
+        for i, doc in enumerate(documents[0]):
             if len(retrieved) >= n_results:
                 break
-            if result_ids and i < len(result_ids):
-                doc_id = result_ids[i]
+            if ids and i < len(ids):
+                doc_id = ids[i]
                 if doc_id in seen_ids:
                     continue
                 seen_ids.add(doc_id)
@@ -55,7 +58,9 @@ class ChromaRetriever:
             )
         return retrieved[:n_results]
 
-    def _get_rule_results(self, message, seen_ids, retrieved):
+    def _get_rule_results(
+        self, message: str, seen_ids: set[str], retrieved: list[RetrievalResult]
+    ) -> None:
         """If message contains a CERT-style rule id, prepend that chunk and mark ids seen."""
         rule_id_match = re.search(r"([A-Z]{3,}\d+-C(?:PP)?)", message.upper())
         if not rule_id_match:
@@ -73,19 +78,21 @@ class ChromaRetriever:
             retrieved.append({"content": doc, "metadata": meta, "distance": 0.0})
 
     @staticmethod
-    def _get_metadata(results, i):
+    def _get_metadata(results: dict[str, Any], i: int) -> dict[str, Any]:
         """Get metadata for i-th document in Chroma query result."""
-        if not results["metadatas"] or not results["metadatas"][0]:
+        metadatas = results.get("metadatas")
+        if not metadatas or not metadatas[0]:
             return {}
-        if i >= len(results["metadatas"][0]):
+        if i >= len(metadatas[0]):
             return {}
-        return results["metadatas"][0][i]
+        return metadatas[0][i]
 
     @staticmethod
-    def _get_distance(results, i):
+    def _get_distance(results: dict[str, Any], i: int) -> float | None:
         """Get distance for i-th document in Chroma query result."""
-        if not results["distances"] or not results["distances"][0]:
+        distances = results.get("distances")
+        if not distances or not distances[0]:
             return None
-        if i >= len(results["distances"][0]):
+        if i >= len(distances[0]):
             return None
-        return results["distances"][0][i]
+        return distances[0][i]

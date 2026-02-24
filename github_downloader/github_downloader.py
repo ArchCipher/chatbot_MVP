@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 from pathlib import Path
+from typing import Any
 
 import requests
 
@@ -23,10 +24,10 @@ class GithubDownloader:
         self,
         repo_url: str,
         target_dir: Path | str,
-        http_client=requests,
+        http_client: Any = requests,
         token: str | None = None,
-        config: dict | None = None,
-    ):
+        config: dict[str, Any] | None = None,
+    ) -> None:
         # validate repo url
         if not repo_url or not repo_url.startswith(GITHUB_BASE_URL):
             raise ValueError("Invalid repo URL")
@@ -48,7 +49,9 @@ class GithubDownloader:
         except requests.RequestException as e:
             raise RuntimeError(f"Error listing files: {e}") from e
 
-    def _fetch_files_recursive(self, contents_url, path_prefix="", depth=0):
+    def _fetch_files_recursive(
+        self, contents_url: str, path_prefix: str = "", depth: int = 0
+    ) -> list[str]:
         """Recurse repo contents API and return list of relative file paths."""
         if depth > self.MAX_RECURSION_DEPTH:
             raise ValueError(f"Max depth reached: {self.MAX_RECURSION_DEPTH}")
@@ -75,7 +78,7 @@ class GithubDownloader:
                 files.append(rel_path)
         return files
 
-    def _valid_file(self, item):
+    def _valid_file(self, item: dict[str, Any]) -> bool:
         """Check if item is a valid file to include."""
         if item.get("type") != "file":
             return False
@@ -84,7 +87,7 @@ class GithubDownloader:
             return False
         return any(name.endswith(ext) for ext in self.config["extensions"])
 
-    def download_files(self, files=None):
+    def download_files(self, files: list[str] | None = None) -> dict[str, Any]:
         """
         Download files (default: list_files()) to target_dir.
         skip existing. Return status dict.
@@ -120,7 +123,7 @@ class GithubDownloader:
             "errors": errors,
         }
 
-    def _download_file(self, raw_url, file):
+    def _download_file(self, raw_url: str, file: str) -> bool:
         """Download a file to target_dir/file. Return True if written"""
         path = Path(self.target_dir) / file
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -142,7 +145,7 @@ class GitHubURLTransformer:
     BRANCH_PREFIXES = ["/tree/", "/blob/"]
 
     @staticmethod
-    def _get_contents_url(url):
+    def _get_contents_url(url: str) -> str:
         """Convert github.com/org/repo/tree/branch to api.github.com/repos/org/repo/contents."""
         branch = GitHubURLTransformer._get_branch_from_url(url)
         url = url.replace(GITHUB_BASE_URL, GitHubURLTransformer.GITHUB_API_BASE_URL)
@@ -154,7 +157,7 @@ class GitHubURLTransformer:
         return url.rstrip("/")
 
     @staticmethod
-    def _get_branch_from_url(url):
+    def _get_branch_from_url(url: str) -> str:
         """Extract branch name"""
         for prefix in GitHubURLTransformer.BRANCH_PREFIXES:
             if prefix in url:
@@ -164,7 +167,7 @@ class GitHubURLTransformer:
         return "master"
 
     @staticmethod
-    def _get_raw_url(url):
+    def _get_raw_url(url: str) -> str:
         """Convert github.com/org/repo/tree|blob/branch to raw.githubusercontent.com/org/repo/branch."""
         url = url.replace(GITHUB_BASE_URL, GitHubURLTransformer.GITHUB_RAW_BASE_URL)
         if "/tree" in url or "/blob" in url:

@@ -8,7 +8,7 @@ from . import GithubDownloader, urls
 logger = logging.getLogger("github_downloader")
 
 
-def main():
+def main() -> None:
     """
     Download each repo from urls into COLLECTION_PATH/<name>
     Log to github_downloader.log.
