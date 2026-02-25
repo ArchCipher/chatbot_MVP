@@ -28,7 +28,7 @@ pip install -r requirements.txt # install dependencies
 
 - Create `.env` file with variables mentioned in [.env.example](./.env.example)
 
-- Use a folder named `source_docs` for your documents, or set the `COLLECTION_PATH` env variable to your folder path. To fetch docs from GitHub into source_docs, see [github_downloader/README.md](./github_downloader/README.md).
+- Use a folder named `source_docs` for your documents, or set the `COLLECTION_PATH` env variable to your folder path. To fetch docs from GitHub into source_docs, run the [github_downloader](./github_downloader/README.md) with a JSON file listing repo URLs: edit `github_downloader/urls.json` then run `python -m github_downloader`.
 
 **Note:** The chatbot accepts any markdown/pdf documents you provide. PDFs are automatically converted to markdown during indexing. The `source_docs` folder is not included in this repository—you must add your own documents.
 
@@ -213,6 +213,7 @@ chatbot/
 │   ├── __init__.py
 │   ├── __main__.py
 │   ├── github_downloader.py
+│   ├── urls.json          # list of repo URLs to download (name, url)
 │   └── README.md
 │
 ├── scripts/

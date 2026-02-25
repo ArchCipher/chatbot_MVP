@@ -1,6 +1,8 @@
-import os
 import logging
+import os
+
 from dotenv import load_dotenv
+
 from chroma import RagClient
 
 logger = logging.getLogger("remove_db_files")

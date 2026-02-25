@@ -2,10 +2,15 @@
 
 import hashlib
 import logging
-from pathlib import Path
 import re
+from pathlib import Path
+from threading import Lock
 
+from chromadb import Collection
+
+from chroma.hash_manager import FileHashManager
 from chroma.models import CollectionResult
+from chroma.text_splitter import TextSplitter
 
 logger = logging.getLogger("ChromaIndexer")
 
@@ -13,7 +18,13 @@ logger = logging.getLogger("ChromaIndexer")
 class ChromaIndexer:
     """Indexes markdown files into a ChromaDB collection"""
 
-    def __init__(self, collection, lock, text_splitter, hash_manager):
+    def __init__(
+        self,
+        collection: Collection,
+        lock: Lock,
+        text_splitter: TextSplitter,
+        hash_manager: FileHashManager,
+    ):
         self.collection = collection
         self.lock = lock
         self.text_splitter = text_splitter

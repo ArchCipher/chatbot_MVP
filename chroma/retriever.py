@@ -1,16 +1,21 @@
 """ChromaDB retrieval: semantic search plus rule-id boost for CERT-style queries."""
 
 import re
-from typing import Any
+from typing import TypedDict
 
-# Chroma query result item: content, metadata, optional distance
-RetrievalResult = dict[str, Any]
+from chromadb import Collection, Metadata, QueryResult
+
+
+class RetrievalResult(TypedDict):
+    content: str
+    metadata: Metadata
+    distance: float | None
 
 
 class ChromaRetriever:
     """Retrieves chunks by semantic similarity, prepends rule chunk when message matches rule id."""
 
-    def __init__(self, collection: Any) -> None:
+    def __init__(self, collection: Collection) -> None:
         self.collection = collection
 
     def get_context(self, results: list[RetrievalResult]) -> str:
@@ -73,12 +78,15 @@ class ChromaRetriever:
             return
         for idx, doc_id in enumerate(rule_results["ids"]):
             seen_ids.add(doc_id)
-            doc = rule_results["documents"][idx]
+            documents = rule_results.get("documents")
+            if not documents or idx >= len(documents) or not documents[idx]:
+                continue
+            doc = documents[idx]
             meta = rule_results["metadatas"][idx] if rule_results["metadatas"] else {}
             retrieved.append({"content": doc, "metadata": meta, "distance": 0.0})
 
     @staticmethod
-    def _get_metadata(results: dict[str, Any], i: int) -> dict[str, Any]:
+    def _get_metadata(results: QueryResult, i: int) -> Metadata:
         """Get metadata for i-th document in Chroma query result."""
         metadatas = results.get("metadatas")
         if not metadatas or not metadatas[0]:
@@ -88,7 +96,7 @@ class ChromaRetriever:
         return metadatas[0][i]
 
     @staticmethod
-    def _get_distance(results: dict[str, Any], i: int) -> float | None:
+    def _get_distance(results: QueryResult, i: int) -> float | None:
         """Get distance for i-th document in Chroma query result."""
         distances = results.get("distances")
         if not distances or not distances[0]:
