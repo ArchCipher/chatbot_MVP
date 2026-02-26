@@ -106,7 +106,9 @@ Answer: """
         raise HTTPException(status_code=500, detail="Internal server error")
     text = response.text
     if text is None:
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(
+            status_code=500, detail="LLM returned no text. Please try again."
+        )
     return text
 
 

@@ -159,13 +159,9 @@ class RagClient:
                 executor.submit(self._extract_text_from_pdf, pdf): pdf for pdf in pdfs
             }
             for future in as_completed(future_to_pdf):
-                try:
-                    md_file = future.result()
-                    if md_file:
-                        converted_files.append(md_file)
-                except Exception as e:
-                    pdf = future_to_pdf[future]
-                    logger.error(f"Error extracting text from {pdf}: {e}")
+                md_file = future.result()
+                if md_file:
+                    converted_files.append(md_file)
         return converted_files
 
     @staticmethod
@@ -181,5 +177,6 @@ class RagClient:
             md_path = Path(pdf).with_suffix(".md")
             md_path.write_text(md, encoding="utf-8")
             return str(md_path.resolve())
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error extracting text from {pdf}: {e}")
             return None

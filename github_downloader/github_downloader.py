@@ -14,6 +14,7 @@ class DownloadResult(TypedDict):
     downloaded_files: list[str]
     errors: list[str]
 
+
 class GithubDownloader:
     """
     Downloads files from a GitHub repository.
