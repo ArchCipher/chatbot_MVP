@@ -13,8 +13,7 @@ RUN pip install -r requirements.txt
 #  RUN is used while building the container
 
 # copy code into the image
-COPY chatbot.py ./
-COPY chroma/ ./chroma/
+COPY . .
 
 # run the app
 CMD ["uvicorn", "chatbot:app", "--host", "0.0.0.0", "--port", "8000"]

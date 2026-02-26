@@ -10,15 +10,15 @@ FastAPI client for RAG chatbot
 """
 
 import asyncio
+import logging
 import os
 import sys
-import logging
 
+import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from google import genai
 from pydantic import BaseModel
-import uvicorn
 
 from chroma import RagClient
 
@@ -104,7 +104,12 @@ Answer: """
     except Exception as e:
         logger.error(f"Error generating response: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-    return response.text
+    text = response.text
+    if text is None:
+        raise HTTPException(
+            status_code=500, detail="LLM returned no text. Please try again."
+        )
+    return text
 
 
 async def main() -> None:

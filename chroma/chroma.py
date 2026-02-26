@@ -4,19 +4,19 @@ Discovers PDF/MD under collection_path, converts PDFs to MD, delegates
 chunking/indexing to ChromaIndexer and retrieval to ChromaRetriever.
 """
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
-from pathlib import Path
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 import chromadb
 import pymupdf4llm
 
-from chroma.indexer import ChromaIndexer
 from chroma.hash_manager import FileHashManager
-from chroma.text_splitter import TextSplitter
-from chroma.retriever import ChromaRetriever
+from chroma.indexer import ChromaIndexer
 from chroma.models import CollectionResult
+from chroma.retriever import ChromaRetriever
+from chroma.text_splitter import TextSplitter
 
 logger = logging.getLogger("RagClient")
 
@@ -159,13 +159,9 @@ class RagClient:
                 executor.submit(self._extract_text_from_pdf, pdf): pdf for pdf in pdfs
             }
             for future in as_completed(future_to_pdf):
-                try:
-                    md_file = future.result()
-                    if md_file:
-                        converted_files.append(md_file)
-                except Exception as e:
-                    pdf = future_to_pdf[future]
-                    logger.error(f"Error extracting text from {pdf}: {e}")
+                md_file = future.result()
+                if md_file:
+                    converted_files.append(md_file)
         return converted_files
 
     @staticmethod
@@ -176,8 +172,11 @@ class RagClient:
             return None
         try:
             md = pymupdf4llm.to_markdown(pdf, header=False, footer=False)
+            if not isinstance(md, str):
+                return None
             md_path = Path(pdf).with_suffix(".md")
             md_path.write_text(md, encoding="utf-8")
             return str(md_path.resolve())
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error extracting text from {pdf}: {e}")
             return None

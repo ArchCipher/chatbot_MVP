@@ -1,8 +1,8 @@
 """Map file path to modification time for incremental re-indexing."""
 
-from pathlib import Path
 import json
 import logging
+from pathlib import Path
 
 logger = logging.getLogger("FileHashManager")
 

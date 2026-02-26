@@ -12,10 +12,6 @@ __pycache__/
 .ruff_cache/
 .venv*
 chroma_db/
-curl_scripts/
 debug/
 docs/
-github_downloader/
-scripts/
 source_docs/
-tests/

@@ -1,11 +1,18 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import requests
 
 GITHUB_BASE_URL = "https://github.com/"
+
+
+class DownloadResult(TypedDict):
+    total_files: int
+    skipped_file_count: int
+    downloaded_files: list[str]
+    errors: list[str]
 
 
 class GithubDownloader:
@@ -83,11 +90,11 @@ class GithubDownloader:
         if item.get("type") != "file":
             return False
         name = item.get("name")
-        if name in self.config["exclude_files"]:
+        if not name or name in self.config["exclude_files"]:
             return False
         return any(name.endswith(ext) for ext in self.config["extensions"])
 
-    def download_files(self, files: list[str] | None = None) -> dict[str, Any]:
+    def download_files(self, files: list[str] | None = None) -> DownloadResult:
         """
         Download files (default: list_files()) to target_dir.
         skip existing. Return status dict.
@@ -115,13 +122,12 @@ class GithubDownloader:
                         files_skipped += 1
                 except Exception as e:
                     errors.append({"file": file, "error": str(e)})
-        return {
-            "status": "success" if not errors else "error",
-            "total files": len(files),
-            "skipped file count": files_skipped,
-            "downloaded files": files_downloaded,
-            "errors": errors,
-        }
+        return DownloadResult(
+            total_files=len(files),
+            skipped_file_count=files_skipped,
+            downloaded_files=files_downloaded,
+            errors=errors,
+        )
 
     def _download_file(self, raw_url: str, file: str) -> bool:
         """Download a file to target_dir/file. Return True if written"""
