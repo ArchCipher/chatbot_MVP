@@ -1,14 +1,14 @@
 init:
-	pip install -r requirements.txt
+	uv sync --extra dev
 
 run:
-	python chatbot.py
+	uv run python chatbot.py
 
 check:
-	ruff format .
-	ruff check --fix .
+	uv run ruff format .
+	uv run ruff check --fix .
 
 test:
-	python -m unittest discover tests
+	uv run python -m unittest discover tests
 
 .PHONY: check init run test

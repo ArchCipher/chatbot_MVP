@@ -17,7 +17,7 @@ git sparse-checkout set <path_in_repo>
 ## Requirements
 
 - Python 3.10+
-- Dependencies: `requests`. Check [requirements.txt](../requirements.txt)
+- Dependencies: managed by [uv](https://github.com/astral-sh/uv). From repo root run `uv sync --extra dev`, then activate the venv (`source .venv/bin/activate`) so you can use `python` without `uv run`. See the main [README](../README.md#installation).
 
 ## Input: JSON file
 
@@ -44,11 +44,13 @@ If the file is missing or invalid, the program logs an error and exits.
 
 ## Run
 
-Make sure you create a virtual environment, activate it, then from repo root:
+From repo root with the venv activated:
 
 ```sh
 python -m github_downloader
 ```
+
+If the venv is not activated, use `uv run python -m github_downloader`.
 
 ## Configuration
 
