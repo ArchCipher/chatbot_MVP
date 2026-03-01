@@ -3,7 +3,6 @@
 *.md
 *.log
 Makefile
-pyproject.toml
 
 __pycache__/
 .DS_Store/

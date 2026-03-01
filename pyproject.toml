@@ -1,6 +1,24 @@
 [project]
 name = "chatbot-mvp"
-requires-python = ">=3.10,<3.13" # Python 3.10 - 3.12
+version = "0.1.0"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "chromadb",
+    "fastapi",
+    "google-genai",
+    "langchain-text-splitters",
+    "pymupdf4llm",
+    "pydantic",
+    "python-dotenv",
+    "uvicorn",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "pyright",
+]
 
 [tool.ruff]
 target-version = "py312" # Python 3.12

@@ -10,19 +10,49 @@ Lets you ask questions over your own documents and get answers grounded in them.
 
 ## Requirements
 
-- Python: Version 3.10 - 3.12
-- Dependencies: Check [requirements.txt](./requirements.txt)
+- Python: 3.10–3.12 (uv installs it automatically if needed). 3.14 is not supported: ChromaDB uses Pydantic v1, which is incompatible with 3.14+.
+- [uv](https://github.com/astral-sh/uv) – package and environment manager
 
 ## Installation
 
-Make sure you create a virtual environment, activate it, and then install all dependencies mentioned in `requirements.txt`
+1. Install [uv](https://github.com/astral-sh/uv) (e.g. via the official installer):
+
+   ```sh
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+   Then ensure `~/.local/bin` is on your `PATH`, or install with pip: `pip install uv`.
+
+2. From the repo root, create the venv and install dependencies:
+
+   ```sh
+   uv sync --extra dev    # creates .venv and installs deps + dev tools (ruff, pyright)
+   ```
+
+3. Activate the venv so you can use `python`, `pytest`, etc. without prefixing every command with `uv run`:
+
+   ```sh
+   source .venv/bin/activate   # macOS/Linux
+   # Windows:  .venv\Scripts\activate
+   ```
+
+## Adding a new package
+
+From the repo root (venv can be active or not):
 
 ```sh
-python -m venv .venv    # create venv
-source .venv/bin/activate   # activate venv
-
-pip install -r requirements.txt # install dependencies
+uv add <package-name>
 ```
+
+This updates `pyproject.toml` and `uv.lock`, and installs the package. Commit both files.
+
+For a dev-only dependency (e.g. a test or lint tool):
+
+```sh
+uv add --dev <package-name>
+```
+
+To add a version constraint: `uv add "package>=1.0"`. After editing `pyproject.toml` by hand, run `uv lock` to refresh the lockfile.
 
 ## Configuration
 
@@ -40,13 +70,21 @@ pip install -r requirements.txt # install dependencies
 
 ## Run
 
-To run programmatically:
-`python chatbot.py`
+With the venv activated (see Installation), from the repo root:
 
-To run via CLI (non-programmatically):
-`fastapi dev chatbot.py`
-or
-`uvicorn chatbot:app --reload`
+Run with: `python chatbot.py`
+
+Without activating the venv, prefix with `uv run`: `uv run python chatbot.py`
+
+## Run with Docker (local)
+
+From the repo root. One command (build + run, with `.env` and local `source_docs` / `chroma_db` mounted):
+
+```sh
+docker compose up --build
+```
+
+Then open http://localhost:8000/ (health) or http://localhost:8000/docs (API docs).
 
 ## Architecture
 
@@ -161,7 +199,7 @@ Send a message to the chatbot.
 
 ## Testing
 
-1. Start the server using `python chatbot.py`
+1. Start the server: `python chatbot.py` (or `uv run python chatbot.py` if the venv is not activated)
 
 2. In another terminal, test the health endpoint:
 ```bash
@@ -187,7 +225,7 @@ curl -X POST http://127.0.0.1:8000/chat \
 
 ## Formatting
 
-Format and lint code with [Ruff](https://docs.astral.sh/ruff/) (install via `pip install -r requirements.txt`):
+Format and lint code with [Ruff](https://docs.astral.sh/ruff/) (installed via `uv sync --extra dev`):
 
 ```bash
 make check
@@ -197,7 +235,8 @@ make check
 
 chatbot/
 ├── README.md
-├── requirements.txt
+├── pyproject.toml
+├── uv.lock
 ├── .env.example
 ├── chatbot.py
 │
@@ -233,13 +272,13 @@ chatbot/
 ## Files Reference
 
 - Main implementation: [chatbot.py](chatbot.py) – FastAPI app. RAG and vector DB in the [chroma/](chroma/) package
-- Configuration: [requirements.txt](requirements.txt), [.env.example](.env.example)
+- Configuration: [pyproject.toml](pyproject.toml), [uv.lock](uv.lock), [.env.example](.env.example)
 - Packages
   - [chroma/](chroma/) - ChromaDB client implementation with vector database operations
   - [github_downloader/](github_downloader/) - see [github_downloader/README.md](./github_downloader/README.md)
 - Scripts: [scripts/](scripts/)
-  - [reload_db.py](scripts/reload_db.py) - script to reload Chroma collection. Run using `python -m scripts.reload_db`
-  - [remove_db_files.py](scripts/remove_db_files.py) - script to remove file from Chroma collection. Run using `python -m scripts.remove_db_files`
+  - [reload_db.py](scripts/reload_db.py) - script to reload Chroma collection. Run: `python -m scripts.reload_db` (or `uv run python -m scripts.reload_db` without venv)
+  - [remove_db_files.py](scripts/remove_db_files.py) - script to remove file from Chroma collection. Run: `python -m scripts.remove_db_files` (or `uv run python -m scripts.remove_db_files` without venv)
 - Curl scripts: [curl_scripts/](curl_scripts/)
   - [test_health.sh](curl_scripts/test_health.sh) – Test GET / endpoint
   - [test_chatbot.sh](curl_scripts/test_chatbot.sh) - Test POST /chat endpoint
