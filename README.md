@@ -36,24 +36,6 @@ Lets you ask questions over your own documents and get answers grounded in them.
    # Windows:  .venv\Scripts\activate
    ```
 
-## Adding a new package
-
-From the repo root (venv can be active or not):
-
-```sh
-uv add <package-name>
-```
-
-This updates `pyproject.toml` and `uv.lock`, and installs the package. Commit both files.
-
-For a dev-only dependency (e.g. a test or lint tool):
-
-```sh
-uv add --dev <package-name>
-```
-
-To add a version constraint: `uv add "package>=1.0"`. After editing `pyproject.toml` by hand, run `uv lock` to refresh the lockfile.
-
 ## Configuration
 
 - Create `.env` file with variables mentioned in [.env.example](./.env.example)
@@ -81,10 +63,28 @@ Without activating the venv, prefix with `uv run`: `uv run python chatbot.py`
 From the repo root. One command (build + run, with `.env` and local `source_docs` / `chroma_db` mounted):
 
 ```sh
-docker compose up --build
+docker compose up
 ```
 
 Then open http://localhost:8000/ (health) or http://localhost:8000/docs (API docs).
+
+## Adding a new package
+
+From the repo root (venv can be active or not):
+
+```sh
+uv add <package-name>
+```
+
+This updates `pyproject.toml` and `uv.lock`, and installs the package. Commit both files.
+
+For a dev-only dependency (e.g. a test or lint tool):
+
+```sh
+uv add --dev <package-name>
+```
+
+To add a version constraint: `uv add "package>=1.0"`. After editing `pyproject.toml` by hand, run `uv lock` to refresh the lockfile.
 
 ## Architecture
 
@@ -114,7 +114,8 @@ flowchart LR
 ```
 
 **Components:**
-- **Chunking**: 
+
+- **Chunking**:
   1. Header-based splitting: Regex-based splitting on any level-2 markdown header (`## `) to preserve semantic boundaries
   2. Recursive character splitting: [langchain_text_splitters.RecursiveCharacterTextSplitter](https://docs.langchain.com/oss/python/integrations/splitters) for further chunking if sections exceed chunk_size (configurable via `CHUNK_SIZE`, `CHUNK_OVERLAP`)
 - **Vector Database**: [chromadb](https://github.com/chroma-core/chroma) (embedding and indexing)
@@ -141,15 +142,18 @@ Example `query_summary` (concise): `distances: [0.0, 1.28, 1.33, ...], rules_fou
 ## Future improvement
 
 ### Core Stability
+
 - **Distance-based filtering**: Use the distance returned by get_query_results in get_context (e.g. only include chunks with distance below a threshold, or within a narrow range)
 - **Better error handling:** Add logging and retry logic for API calls
 
 ### Code Analysis (Core Value)
+
 - **Code input endpoint**: Add `/analyze_code` endpoint for semantic code → rule retrieval (no AST parsing needed)
 - **42 Integration**: Test against personal C projects and document security findings
 - **Security report generation**: CLI tool to scan code and output markdown security reports
 
 ### Future (When Needed)
+
 - **Metadata filtering**: Extend filtering using ChromaDB's `where` clause for source, date, or other metadata
 - **Document automation**: Automate document updates and indexing (e.g., watch for new PDF releases)
 - **Production optimizations**: Vector DB migration, performance improvements (only when real users exist)
@@ -157,117 +161,31 @@ Example `query_summary` (concise): `distances: [0.0, 1.28, 1.33, ...], rules_fou
 ## API Documentation
 
 FastAPI automatically generates interactive API documentation:
+
 - Swagger UI: http://127.0.0.1:8000/docs
 - ReDoc: http://127.0.0.1:8000/redoc
-
-### GET /
-
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "message": "Hello World"
-}
-```
-
-### POST /chat
-
-Send a message to the chatbot.
-
-**Request:**
-```json
-{
-  "message": "What is PRE30-C?",
-  "session_id": 1
-}
-```
-
-**Response:**
-```json
-{
-  "reply": "Based on the provided context, \"-C\" in \"PRE30-C\" indicates that it pertains to the C programming language. While the specific meaning of \"PRE30\" is not detailed, the document discusses coding standards, guidelines, and noncompliant code examples, suggesting that \"PRE30-C\" is likely a specific guideline or rule within a C coding standard."
-}
-```
-
-**Request schema:**
-  `message` (string) – user's message.
-  `session_id` (integer) – session identifier for conversation tracking.
-
-**Response schema:**
-  `reply` (string) – bot's response message generated using RAG.
 
 ## Testing
 
 1. Start the server: `python chatbot.py` (or `uv run python chatbot.py` if the venv is not activated)
 
 2. In another terminal, test the health endpoint:
+
 ```bash
 ./curl_scripts/test_health.sh
 ```
 
 3. Test a conversation:
+
 ```bash
 ./curl_scripts/test_chatbot.sh
 ```
 
 or run multiple tests:
+
 ```bash
 ./curl_scripts/tests.sh
 ```
-
-or manually:
-```bash
-curl -X POST http://127.0.0.1:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What is PRE30-C?", "session_id": 1}'
-```
-
-## Formatting
-
-Format and lint code with [Ruff](https://docs.astral.sh/ruff/) (installed via `uv sync --extra dev`):
-
-```bash
-make check
-```
-
-## File structure
-
-chatbot/
-├── README.md
-├── pyproject.toml
-├── uv.lock
-├── .env.example
-├── chatbot.py
-│
-├── chroma/
-│   ├── __init__.py
-│   ├── chroma.py
-│   ├── indexer.py
-│   ├── retriever.py
-│   ├── hash_manager.py
-│   └── text_splitter.py
-│
-├── github_downloader/
-│   ├── __init__.py
-│   ├── __main__.py
-│   ├── github_downloader.py
-│   ├── urls.json          # list of repo URLs to download (name, url)
-│   └── README.md
-│
-├── scripts/
-│   ├── __init__.py
-│   ├── reload_db.py
-│   └── remove_db_files.py
-│
-├── curl_scripts/
-│   ├── test_health.sh
-│   ├── test_chatbot.sh
-│   └── tests.sh
-│
-└── docs/
-    ├── sample_retrieval_output.md
-    └── sample_file_hashes.json
 
 ## Files Reference
 
