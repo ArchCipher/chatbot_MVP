@@ -72,8 +72,7 @@ To add a version constraint: `uv add "package>=1.0"`. After editing `pyproject.t
 
 With the venv activated (see Installation), from the repo root:
 
-- Run programmatically: `python chatbot.py`
-- Run via CLI: `fastapi dev chatbot.py` or `uvicorn chatbot:app --reload`
+Run with: `python chatbot.py`
 
 Without activating the venv, prefix with `uv run`: `uv run python chatbot.py`
 
